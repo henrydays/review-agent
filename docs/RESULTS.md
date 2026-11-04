@@ -151,7 +151,7 @@ flowchart LR
     class B1,B5 script
 ```
 
-These aren't bare models. Each session gets the reading prompt and the general focus from the skill in the repo, but nothing else from the pipeline. A truly bare prompt hasn't been run, and neither Sonnet nor Opus has run inside the pipeline.
+These aren't bare models. Each session gets the reading prompt and the general focus from the skill in the repo, but nothing else from the pipeline. A truly bare prompt hasn't been run. [c9 with each model](#c9-with-each-model) runs the pipeline itself on Sonnet and Opus.
 
 | | c9 | One model alone |
 |---|---|---|
@@ -186,13 +186,29 @@ Read this as a direction, not a ranking:
 - **Runs swing widely.** Haiku at medium scored 56.8 on these same PRs in an earlier run, and 37.6 here, so only large gaps mean anything.
 - **It isn't a like-for-like test of models.** c9 uses different prompts and many sessions, so this shows Haiku inside a pipeline against each model alone. The prompt for models alone also asks how each finding was found, which adds some output.
 
-What it suggests: c9 costs about what one Sonnet session at high effort costs, and finds more. Max effort is the only setting that clearly lifts a model alone, and it takes over 10 minutes per PR. At high effort, Sonnet answers in well under half of Haiku's time, which makes it worth testing inside the pipeline, since discovery takes most of a PR's time. Sonnet's tokens cost 20 times Haiku's, so that would raise cost.
+What it suggests: c9 costs about what one Sonnet session at high effort costs, and finds more. Max effort is the only setting that clearly lifts a model alone, and it takes over 10 minutes per PR.
 
 To repeat a row, using the PRs in [the data file](results/model-comparison.json):
 
 ```sh
 python3 bench/teacher.py run --who sonnet-high --select KEYS --name cmp-sonnet-high --at-once 4
 ```
+
+### c9 with each model
+
+The same pipeline, prompts, deadlines and effort settings, with one model in every session. On the same 4 `train` PRs, judged by Sonnet 5.5, one model at a time:
+
+| c9 on | P | R | F1 | High-severity F1 | Golden found | Comments per PR | Cost per PR | Mean time | Unmatched findings true |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Haiku 5.5, full run | 93.0 | 73.6 | 82.2 | 83.3 | 39 of 54 | 21.0 | $0.187 | 324s | 87.6% over all 219 PRs |
+| Haiku 5.5, second run | 88.1 | 71.5 | 78.9 | 93.3 | 39 of 54 | 24.5 | $0.173 | 236s | 86.7% (70 to 95) |
+| Sonnet 5.5 | 87.8 | 69.9 | 77.8 | 89.5 | 38 of 54 | 14.8 | $1.511 | 147s | 91.7% (74 to 98) |
+| Opus 5.5 | 94.3 | 72.0 | 81.7 | 78.3 | 39 of 54 | 20.2 | $3.958 | 202s | 96.4% (82 to 99) |
+
+- **A stronger model doesn't raise recall here.** Every model finds 38 or 39 of the 54 golden findings, so more recall has to come from what the pipeline asks, not from the model.
+- **It may lower false alarms.** The true rate rises from Haiku to Sonnet to Opus, in line with OhMyBug's use of Opus. Each estimate rests on about 30 findings, and the intervals overlap, so this is a lead to test and not a result.
+- **It costs far more.** Sonnet costs about 9 times as much as Haiku here, and Opus about 23 times.
+- **Sonnet is the fastest, and time depends on what runs alongside.** Sonnet takes 147 seconds. The two Haiku runs of the same PRs took 324 and 236 seconds. The first ran beside other PRs in the full run, and the second ran with only these PRs on the machine.
 
 ### Time and cost
 
