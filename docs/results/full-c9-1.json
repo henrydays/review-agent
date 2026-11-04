@@ -1,0 +1,353 @@
+{
+ "run": "full-c9-1",
+ "date": "2026-11-04",
+ "corpus": "ReviewBench, all 219 PRs, one run",
+ "reviewer": "claude-haiku-5-5 through Claude Code CLI",
+ "candidate": "c9-few, fingerprint 4221b3dcb7",
+ "judge": "claude-sonnet-5-5",
+ "redone_prs_merged": true,
+ "scores_are": "macro means over PRs under macro, pooled counts under micro",
+ "micro": {
+  "overall": {
+   "candidate_count": 7269,
+   "golden_tp_count": 2623,
+   "matched_count": 1586,
+   "matched_tp_count": 1343,
+   "unmatched_count": 5683,
+   "unmatched_tp_count": 0,
+   "unmatched_fp_count": 5683,
+   "golden_covered_count": 1474,
+   "grounded_precision": 0.8467843631778058,
+   "grounded_recall": 0.5619519634006862,
+   "augmented_precision": 0.18475718805888017,
+   "augmented_recall": 0.5619519634006862,
+   "grounded_f1": 0.6755730316410694
+  },
+  "by_severity": {
+   "high": {
+    "candidate_count": 102,
+    "golden_tp_count": 181,
+    "matched_count": 102,
+    "matched_tp_count": 95,
+    "unmatched_count": 0,
+    "unmatched_tp_count": 0,
+    "unmatched_fp_count": 0,
+    "golden_covered_count": 105,
+    "grounded_precision": 0.9313725490196079,
+    "grounded_recall": 0.580110497237569,
+    "augmented_precision": 0.9313725490196079,
+    "augmented_recall": 0.580110497237569,
+    "grounded_f1": 0.7149256405662068
+   },
+   "low": {
+    "candidate_count": 870,
+    "golden_tp_count": 1551,
+    "matched_count": 870,
+    "matched_tp_count": 667,
+    "unmatched_count": 0,
+    "unmatched_tp_count": 0,
+    "unmatched_fp_count": 0,
+    "golden_covered_count": 748,
+    "grounded_precision": 0.7666666666666667,
+    "grounded_recall": 0.48226950354609927,
+    "augmented_precision": 0.7666666666666667,
+    "augmented_recall": 0.48226950354609927,
+    "grounded_f1": 0.5920878288851031
+   },
+   "medium": {
+    "candidate_count": 614,
+    "golden_tp_count": 891,
+    "matched_count": 614,
+    "matched_tp_count": 581,
+    "unmatched_count": 0,
+    "unmatched_tp_count": 0,
+    "unmatched_fp_count": 0,
+    "golden_covered_count": 621,
+    "grounded_precision": 0.9462540716612378,
+    "grounded_recall": 0.696969696969697,
+    "augmented_precision": 0.9462540716612378,
+    "augmented_recall": 0.696969696969697,
+    "grounded_f1": 0.8027031085748612
+   },
+   "unclassified": {
+    "candidate_count": 5683,
+    "golden_tp_count": 0,
+    "matched_count": 0,
+    "matched_tp_count": 0,
+    "unmatched_count": 5683,
+    "unmatched_tp_count": 0,
+    "unmatched_fp_count": 5683,
+    "golden_covered_count": 0,
+    "grounded_precision": null,
+    "grounded_recall": null,
+    "augmented_precision": 0.0,
+    "augmented_recall": null,
+    "grounded_f1": null
+   }
+  }
+ },
+ "macro": {
+  "overall": {
+   "candidate_count": 7269,
+   "golden_tp_count": 2623,
+   "matched_count": 1586,
+   "matched_tp_count": 1343,
+   "unmatched_count": 5683,
+   "unmatched_tp_count": 0,
+   "unmatched_fp_count": 5683,
+   "golden_covered_count": 1474,
+   "grounded_precision": 0.8284549031995209,
+   "grounded_recall": 0.5709049256470449,
+   "augmented_precision": 0.2405540189479748,
+   "augmented_recall": 0.5709049256470449,
+   "grounded_f1": 0.6759790800953619
+  },
+  "by_severity": {
+   "high": {
+    "candidate_count": 102,
+    "golden_tp_count": 181,
+    "matched_count": 102,
+    "matched_tp_count": 95,
+    "unmatched_count": 0,
+    "unmatched_tp_count": 0,
+    "unmatched_fp_count": 0,
+    "golden_covered_count": 105,
+    "grounded_precision": 0.9077380952380952,
+    "grounded_recall": 0.664257347590681,
+    "augmented_precision": 0.9077380952380952,
+    "augmented_recall": 0.664257347590681,
+    "grounded_f1": 0.7671417906464639
+   },
+   "low": {
+    "candidate_count": 870,
+    "golden_tp_count": 1551,
+    "matched_count": 870,
+    "matched_tp_count": 667,
+    "unmatched_count": 0,
+    "unmatched_tp_count": 0,
+    "unmatched_fp_count": 0,
+    "golden_covered_count": 748,
+    "grounded_precision": 0.7645222660148033,
+    "grounded_recall": 0.4877969662973805,
+    "augmented_precision": 0.7645222660148033,
+    "augmented_recall": 0.4877969662973805,
+    "grounded_f1": 0.5955855861772055
+   },
+   "medium": {
+    "candidate_count": 614,
+    "golden_tp_count": 891,
+    "matched_count": 614,
+    "matched_tp_count": 581,
+    "unmatched_count": 0,
+    "unmatched_tp_count": 0,
+    "unmatched_fp_count": 0,
+    "golden_covered_count": 621,
+    "grounded_precision": 0.928036636934942,
+    "grounded_recall": 0.7014075305508545,
+    "augmented_precision": 0.928036636934942,
+    "augmented_recall": 0.7014075305508545,
+    "grounded_f1": 0.7989618776292703
+   },
+   "unclassified": {
+    "candidate_count": 5683,
+    "golden_tp_count": 0,
+    "matched_count": 0,
+    "matched_tp_count": 0,
+    "unmatched_count": 5683,
+    "unmatched_tp_count": 0,
+    "unmatched_fp_count": 5683,
+    "golden_covered_count": 0,
+    "grounded_precision": null,
+    "grounded_recall": null,
+    "augmented_precision": 0.0,
+    "augmented_recall": null,
+    "grounded_f1": null
+   }
+  }
+ },
+ "augmented_estimate": {
+  "sampled": 822,
+  "novel_tp_rate": 0.8759124087591241,
+  "novel_tp_rate_ci95": [
+   0.8516103880069006,
+   0.8967171363028461
+  ],
+  "augmented_precision": 0.8610927655358808,
+  "augmented_recall": 0.8260604790306523,
+  "augmented_f1": 0.8432129146290457,
+  "novel_yield": 0.6205387465879059
+ },
+ "all": {
+  "prs": 219,
+  "precision": 0.8285,
+  "recall": 0.5709,
+  "f1": 0.676,
+  "comments_per_pr": 33.2,
+  "mean_seconds": 340,
+  "prs_timed": 202,
+  "cost_per_pr": 0.38,
+  "verify_tasks_lost": 1029,
+  "verify_tasks": 2738
+ },
+ "by_split": {
+  "train": {
+   "prs": 114,
+   "precision": 0.8115,
+   "recall": 0.5557,
+   "f1": 0.6597,
+   "comments_per_pr": 31.8,
+   "mean_seconds": 338,
+   "prs_timed": 103,
+   "cost_per_pr": 0.39,
+   "verify_tasks_lost": 549,
+   "verify_tasks": 1408
+  },
+  "val": {
+   "prs": 22,
+   "precision": 0.889,
+   "recall": 0.6039,
+   "f1": 0.7192,
+   "comments_per_pr": 39.5,
+   "mean_seconds": 345,
+   "prs_timed": 21,
+   "cost_per_pr": 0.405,
+   "verify_tasks_lost": 121,
+   "verify_tasks": 306
+  },
+  "holdout": {
+   "prs": 74,
+   "precision": 0.8361,
+   "recall": 0.5687,
+   "f1": 0.677,
+   "comments_per_pr": 35.9,
+   "mean_seconds": 355,
+   "prs_timed": 69,
+   "cost_per_pr": 0.388,
+   "verify_tasks_lost": 358,
+   "verify_tasks": 977
+  },
+  "val_siblings_unused": {
+   "prs": 9,
+   "precision": 0.831,
+   "recall": 0.7115,
+   "f1": 0.7666,
+   "comments_per_pr": 13.6,
+   "mean_seconds": 255,
+   "prs_timed": 9,
+   "cost_per_pr": 0.137,
+   "verify_tasks_lost": 1,
+   "verify_tasks": 47
+  }
+ },
+ "by_size_lines_changed": {
+  "under 100": {
+   "prs": 38,
+   "precision": 0.7776,
+   "recall": 0.6535,
+   "f1": 0.7102,
+   "comments_per_pr": 10.8,
+   "mean_seconds": 233,
+   "prs_timed": 34,
+   "cost_per_pr": 0.109,
+   "verify_tasks_lost": 0,
+   "verify_tasks": 143
+  },
+  "100-300": {
+   "prs": 41,
+   "precision": 0.8399,
+   "recall": 0.5581,
+   "f1": 0.6706,
+   "comments_per_pr": 15.2,
+   "mean_seconds": 271,
+   "prs_timed": 37,
+   "cost_per_pr": 0.145,
+   "verify_tasks_lost": 2,
+   "verify_tasks": 223
+  },
+  "300-800": {
+   "prs": 47,
+   "precision": 0.7949,
+   "recall": 0.5383,
+   "f1": 0.6419,
+   "comments_per_pr": 21.1,
+   "mean_seconds": 328,
+   "prs_timed": 45,
+   "cost_per_pr": 0.221,
+   "verify_tasks_lost": 13,
+   "verify_tasks": 368
+  },
+  "800-2000": {
+   "prs": 42,
+   "precision": 0.8342,
+   "recall": 0.5672,
+   "f1": 0.6753,
+   "comments_per_pr": 34.2,
+   "mean_seconds": 383,
+   "prs_timed": 39,
+   "cost_per_pr": 0.407,
+   "verify_tasks_lost": 82,
+   "verify_tasks": 484
+  },
+  "2000 and up": {
+   "prs": 51,
+   "precision": 0.8825,
+   "recall": 0.5539,
+   "f1": 0.6806,
+   "comments_per_pr": 74.6,
+   "mean_seconds": 450,
+   "prs_timed": 47,
+   "cost_per_pr": 0.896,
+   "verify_tasks_lost": 932,
+   "verify_tasks": 1520
+  }
+ },
+ "total_cost_usd_at_api_rates_floor": 83.27,
+ "judge_usage": {
+  "calls": 43,
+  "cache_hits": 1428
+ },
+ "opus_audit": {
+  "judge": "claude-opus-5-5 at max effort",
+  "answered": 88,
+  "asked": 100,
+  "sonnet_true_opus_true": [
+   39,
+   44
+  ],
+  "sonnet_false_opus_true": [
+   15,
+   44
+  ],
+  "true_rate_weighted": 0.819,
+  "true_rate_95": [
+   0.735,
+   0.903
+  ],
+  "augmented_precision": 0.821,
+  "augmented_recall": 0.82,
+  "augmented_f1": 0.82
+ },
+ "stages": {
+  "raw_findings": 12417,
+  "issues_after_merging": 6626,
+  "verdicts": {
+   "confirmed": 3619,
+   "unverified": 2445,
+   "not_worth_raising": 250,
+   "uncertain": 192,
+   "refuted": 120
+  },
+  "comments": 7269,
+  "sessions_per_pr": {
+   "reading": 7.6,
+   "merging": 7.1,
+   "checking": 10.9
+  }
+ },
+ "leaderboard_rank_if_entered": {
+  "entries_counting_c9": 22,
+  "grounded_f1": 2,
+  "high_severity_f1": 3,
+  "augmented_f1": 2
+ }
+}

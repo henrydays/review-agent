@@ -58,6 +58,8 @@ Models are set by `--host`, `--model`, `--effort` and `--judge-model`. The defau
 
 Two runs of the same version on the 16 training PRs can differ by more than a real change does. Fresh runs of one set of discovery prompts covered between 24 and 29 of the 34 high-severity findings. So test a change to verification or to which sessions run by replaying the same cached discovery, as `bench/run.py --skill-dir` does when the discovery prompts are unchanged, and compare only what changed. Pass `--validate-anyway` to `evaluate` when a controlled test already supports a change: it skips the filter on training PRs, which only saves money, and the decision on validation PRs still applies.
 
+Small sets also flatter. One candidate scored F1 74.2 on the 25 PRs of `train_quick` and `val_quick`, and 67.6 on all 219. A run in progress is no better: PRs run in alphabetical order, so repositories cluster, and the same run read 69.7 at 148 PRs. A reading from 31 PRs had 94% of unmatched findings true, and the full sample says 87.6%.
+
 ### Measuring time
 
 Measure a session by when it answers. Claude Code keeps running after it has answered: with 24 sessions at once, a one-word prompt has its answer after about 13 seconds and exits after about 57. So `ClaudeHost` returns on the `result` event, stops the process, and turns off non-essential traffic, which on its own halves the time a session spends outside the model. This machine's load stays near 5 throughout, so CPU is not the limit. API time still grows with how many sessions run at once, about 4 seconds at 8 sessions and 14 at 24, so a PR's own sessions slow each other. Running a large PR alone took as long as running two PRs at once, since most of what is in flight then is that PR's own. Sessions that start together also slow each other before the model is involved: alone, a session's first tool runs at once, and in a burst it waits 10 to 30 seconds. Plugins, ripgrep and claude.ai connectors are not the cause, since turning each off changed nothing over repeated trials. A burst of 20 extra one-word sessions pushed a one-word answer from about 15 seconds to as much as 140, and live PRs into their deadlines. Going from 2 PRs at once to 3 raised time in every size bucket, by 40% for the smallest PRs, and more PRs lost tasks to their deadline, so a full run takes 2 at once despite the wait. Run nothing heavy alongside a run you are timing, repeat a timing comparison before believing it, and compare `seconds` with `api_seconds` before blaming the model or the account. A session killed at a deadline never reports its cost, so a run with many killed sessions looks cheaper than it was. Tasks replayed from the cache take no time, so a change to how the budget is split looks better than it is. Test that kind of change with `evaluate --candidate-salt NAME`, which runs the candidate fresh and keeps the champion's scores cached.
@@ -65,6 +67,20 @@ Measure a session by when it answers. Claude Code keeps running after it has ans
 ### Long runs and restarts
 
 `bench/run.py` saves each session's answer to the task cache, each PR's findings and artifacts, and a record of its measurements under `runs/<name>/records/`, as they finish. Pass `--resume` with the same name and settings to keep those PRs and review only the rest, so a crash loses the PRs in flight. Don't rerun a finished run without `--resume`: answers replay from the cache, but tasks killed at a deadline never reached it, so they run again with a new deadline, and the PR gets a score it did not earn in its measured time. A PR interrupted mid-review replays its finished sessions when it resumes, which makes its `seconds` too low, so leave it out of timing: `stats.json` shows `cached` above zero in its `stages`. A failure while setting up one PR marks that PR as failed and the rest carry on. The usage check runs on its own thread, since a reading can take minutes on a busy machine if it waits for the process to exit.
+
+### Running a full benchmark
+
+```sh
+python3 bench/run.py --select all --name NAME --skill-dir DIR --host claude --model claude-haiku-5-5 --prs-at-once 2 --concurrency 24 --salt NAME --classify-sample 4 --max-usage 85
+```
+
+It takes about 11 hours, and about 11 points of the weekly usage meter. `--max-usage` matters because overage is off, so at 100% every session stops, including the one driving the loop. The meter comes from a Claude Code session's own `rate_limit_event`: `loop/run_loop.py status` shows OpenCode Go's, which only covers the improver.
+
+Results include `val` and `holdout`, so read and report aggregates only, and design the next change from `train`. Each full run is a look at `holdout`, so keep them rare and don't use them to choose between candidates.
+
+If something disturbs a PR, review it again rather than keep a score it did not earn. Use a new salt and a separate run name with `--no-judge`, then copy its `findings`, `artifacts` and `records` into the original run and judge again with `bench/judge.py --candidate RUN/findings --output RUN/results.json --classify-sample 4`. The judge's cache replays every PR that didn't change.
+
+Add the outcome to [RESULTS.md](RESULTS.md).
 
 ## Splits
 

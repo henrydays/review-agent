@@ -42,6 +42,12 @@ WHO = {
     "haiku-medium": ("claude", "claude-haiku-5-5", "medium"),
     "haiku-high": ("claude", "claude-haiku-5-5", "high"),
     "haiku-max": ("claude", "claude-haiku-5-5", "max"),
+    "sonnet-low": ("claude", "claude-sonnet-5-5", "low"),
+    "sonnet-medium": ("claude", "claude-sonnet-5-5", "medium"),
+    "sonnet-high": ("claude", "claude-sonnet-5-5", "high"),
+    "sonnet-max": ("claude", "claude-sonnet-5-5", "max"),
+    "opus-medium": ("claude", "claude-opus-5-5", "medium"),
+    "opus-high": ("claude", "claude-opus-5-5", "high"),
 }
 TEACH_ROOT = CACHE / "teach"
 HOW_FOUND = """
