@@ -1,0 +1,5 @@
+# The image needs only the skill and the entrypoint.
+*
+!skill/
+!docker/entrypoint.py
+**/__pycache__

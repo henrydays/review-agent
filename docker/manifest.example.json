@@ -1,0 +1,15 @@
+{
+  "_note": "For reference only. The ReviewBench portal generates the manifest when you register at https://review-bench.ai/submit. Fill in your image digest there.",
+  "name": "pr-review",
+  "display_name": "pr-review",
+  "image": "ghcr.io/<you>/pr-review@sha256:<digest>",
+  "image_visibility": "public",
+  "configuration": [
+    {"key": "model", "value": "deepseek/deepseek-flash"},
+    {"key": "profile", "value": "exhaustive"}
+  ],
+  "secrets": {"env": ["DEEPSEEK_API_KEY"]},
+  "model_api_url": "https://api.deepseek.com",
+  "egress": ["api.deepseek.com"],
+  "pr_timeout_seconds": 1800
+}

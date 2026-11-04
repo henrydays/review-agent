@@ -27,3 +27,11 @@ build/
 
 # Personal Claude Code settings
 .claude/settings.local.json
+
+# Benchmark corpus clones, PR checkouts, run artifacts
+.cache/
+runs/
+loop/work/
+
+# Claude Code scheduler lock
+.claude/scheduled_tasks.lock

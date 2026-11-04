@@ -1,0 +1,62 @@
+{
+  "default_profile": "balanced",
+  "rules_chars": 5000,
+  "partition": {
+    "target_chars": 26000,
+    "max_partitions": 24
+  },
+  "hints": {
+    "enabled": true,
+    "mentions": true,
+    "chars_per_prompt": 2500
+  },
+  "budget": {
+    "max_discovery_tasks": 60,
+    "max_steps": 8,
+    "min_task_seconds": 75,
+    "deadline_base": 300,
+    "deadline_per_1k_lines": 30,
+    "deadline_max": 900,
+    "stage_share": {"discover": 0.6, "gap": 0.7, "dedupe": 0.78, "verify": 0.97}
+  },
+  "lenses": {
+    "general":         {"title": "Everything: an exhaustive sweep",        "applies": ["source", "test", "config", "docs", "ui"], "priority": 1, "passes": 2},
+    "correctness":     {"title": "Logic and state",                        "applies": ["source", "test", "ui"],                   "priority": 2, "passes": 1},
+    "contracts":       {"title": "Contracts across files",                 "applies": ["source", "config", "ui"],                 "priority": 3, "passes": 1},
+    "config":          {"title": "Build, CI, deployment and dependencies", "applies": ["config"],                                 "priority": 3, "passes": 1},
+    "intent":          {"title": "Does it do what it claims, and what did it remove", "applies": ["source", "config", "docs", "ui"], "priority": 4, "passes": 1, "scope": "pr"},
+    "reliability":     {"title": "Failure, concurrency and performance",   "applies": ["source", "config"],                       "priority": 5, "passes": 1},
+    "security":        {"title": "Security with a concrete path",          "applies": ["source", "config", "ui"],                 "priority": 6, "passes": 1},
+    "tests":           {"title": "Tests",                                  "applies": ["test", "source"],                         "priority": 7, "passes": 1},
+    "docs":            {"title": "Documentation against the code",         "applies": ["docs", "source", "config"],               "priority": 8, "passes": 1},
+    "maintainability": {"title": "Consistency and maintainability",        "applies": ["source", "test", "ui"],                   "priority": 9, "passes": 1},
+    "ui":              {"title": "User interface and accessibility",       "applies": ["ui"],                                     "priority": 9, "passes": 1}
+  },
+  "gap": {
+    "enabled": true,
+    "title": "Hunks nobody has commented on",
+    "margin": 3,
+    "min_changed_lines": 3,
+    "max_tasks": 12
+  },
+  "merge": {
+    "near_lines": 3,
+    "near_jaccard": 0.4,
+    "far_jaccard": 0.72
+  },
+  "dedupe": {
+    "enabled": true,
+    "min_candidates": 2,
+    "max_per_task": 30
+  },
+  "verify": {
+    "enabled": true,
+    "batch_size": 3,
+    "max_candidates": 150
+  },
+  "profiles": {
+    "exhaustive": {"drop_verdicts": ["refuted"], "min_confidence": 0.0, "min_severity": "low", "max_findings": 90, "expand_also_in": true},
+    "balanced": {"drop_verdicts": ["refuted"], "min_confidence": 0.5, "min_severity": "low", "max_findings": 25, "expand_also_in": false},
+    "strict": {"drop_verdicts": ["refuted", "uncertain", "unverified"], "min_confidence": 0.7, "min_severity": "medium", "max_findings": 10, "expand_also_in": false}
+  }
+}
