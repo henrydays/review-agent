@@ -5,8 +5,11 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "loop"))
@@ -462,6 +465,128 @@ class ClaudeMeter(unittest.TestCase):
 
     def test_unreadable_meter_does_not_stop_a_run(self):
         self.assertIsNone(self._llm().over_claude_budget(85, read=lambda: None))
+
+    def test_a_reading_ends_with_the_answer_and_survives_a_hang(self):
+        llm = self._llm()
+        event = {"type": "rate_limit_event", "rate_limit_info": {"unifiedWindows": {"seven_day": {"utilization": 0.5}}}}
+        with mock.patch.object(llm.ClaudeHost, "_session", return_value=(json.dumps(event), "", 0)):
+            self.assertAlmostEqual(llm.claude_usage(), 50.0)
+        with mock.patch.object(llm.ClaudeHost, "_session", side_effect=subprocess.TimeoutExpired("claude", 1)):
+            self.assertIsNone(llm.claude_usage())
+
+
+class ResumeRun(unittest.TestCase):
+    """A full run takes hours and a process can die at any point, so a restart has to keep what is done, exactly as it was measured."""
+
+    def setUp(self):
+        sys.path.insert(0, str(ROOT / "bench"))
+        import run as bench_run
+        self.bench = bench_run
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        self.reviewed: list[str] = []
+        self.broken = set()
+        for name, value in {"RUNS": Path(self.dir.name), "fetch": lambda keys: (keys, {}), "review_one": self._review, "audit_run": lambda out: [],
+                            "refused_calls": lambda out: {}, "spend": lambda out: {}, "over_claude_budget": lambda limit: None}.items():
+            patcher = mock.patch.object(bench_run, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def _review(self, key, out, **_):
+        self.reviewed.append(key)
+        if key in self.broken:
+            raise subprocess.CalledProcessError(128, "git")
+        (out / "findings").mkdir(parents=True, exist_ok=True)
+        (out / "findings" / f"{key}.json").write_text("{}")
+        return {"key": key, "exit": 0, "seconds": 100.0 + len(self.reviewed)}
+
+    def _run(self, keys, **options):
+        settings = {"skill_dir": Path("skill"), "model": "m", "prs_at_once": 1, "concurrency": 1, "salt": "s", "host": "claude", **options}
+        return self.bench.run(keys, "r", **settings)
+
+    def test_finished_prs_keep_their_measurements(self):
+        self.broken = {"b"}
+        self._run(["a", "b", "c"])
+        self.assertEqual(self.reviewed, ["a", "b", "c"])
+        first = {r["key"]: r for r in json.loads((Path(self.dir.name) / "r" / "run.json").read_text())["records"]}
+        self.broken = set()
+        self.reviewed.clear()
+        _, records = self._run(["a", "b", "c"], resume=True)
+        self.assertEqual(self.reviewed, ["b"])
+        by_key = {r["key"]: r for r in records}
+        self.assertEqual(by_key["a"]["seconds"], first["a"]["seconds"])
+        self.assertEqual(by_key["c"]["seconds"], first["c"]["seconds"])
+        self.assertEqual(by_key["b"]["exit"], 0)
+
+    def test_a_failure_in_one_pr_does_not_lose_the_run(self):
+        self.broken = {"a"}
+        _, records = self._run(["a", "b"])
+        self.assertEqual([r["exit"] for r in records], [1, 0])
+        self.assertIn("128", records[0]["stderr_tail"])
+        self.assertTrue((Path(self.dir.name) / "r" / "run.json").exists())
+
+    def test_records_are_saved_as_each_pr_ends(self):
+        seen = []
+
+        def review(key, out, **_):
+            seen.append(sorted(p.stem for p in (out / "records").glob("*.json")))
+            return self._review(key, out)
+
+        with mock.patch.object(self.bench, "review_one", review):
+            self._run(["a", "b"])
+        self.assertEqual(seen, [[], ["a"]])
+
+    def test_a_pr_without_findings_is_reviewed_again(self):
+        self._run(["a", "b"])
+        (Path(self.dir.name) / "r" / "findings" / "a.json").unlink()
+        self.reviewed.clear()
+        self._run(["a", "b"], resume=True)
+        self.assertEqual(self.reviewed, ["a"])
+
+    def test_different_settings_are_refused(self):
+        self._run(["a"])
+        with self.assertRaisesRegex(SystemExit, "different settings"):
+            self._run(["a"], resume=True, salt="other")
+
+    def test_nothing_to_resume(self):
+        with self.assertRaisesRegex(SystemExit, "nothing to resume"):
+            self._run(["a"], resume=True)
+
+    def test_a_run_without_resume_starts_over(self):
+        self._run(["a"])
+        self.reviewed.clear()
+        self._run(["a"])
+        self.assertEqual(self.reviewed, ["a"])
+
+    def test_no_pr_waits_for_the_meter(self):
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        def slow_meter(limit):
+            release.wait(30)
+            return None
+
+        with mock.patch.object(self.bench, "over_claude_budget", slow_meter):
+            self._run(["a", "b"])
+        self.assertFalse(release.is_set())
+        self.assertEqual(self.reviewed, ["a", "b"])
+
+    def test_the_meter_stops_new_prs(self):
+        started = threading.Event()
+
+        def full_meter(limit):
+            started.wait(10)
+            return "Claude usage is at 90%"
+
+        def review(key, out, **_):
+            started.set()
+            time.sleep(0.3)
+            return self._review(key, out)
+
+        with mock.patch.object(self.bench, "over_claude_budget", full_meter), mock.patch.object(self.bench, "review_one", review):
+            self._run(["a", "b", "c"])
+        self.assertEqual(self.reviewed, ["a"])
+        self.assertEqual(json.loads((Path(self.dir.name) / "r" / "run.json").read_text())["not_started"], ["b", "c"])
 
 
 if __name__ == "__main__":

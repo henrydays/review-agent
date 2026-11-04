@@ -107,11 +107,11 @@ def claude_usage(timeout: float = 300) -> float | None:
         command = ["claude", "-p", "--output-format", "stream-json", "--verbose", "--setting-sources", "", "--strict-mcp-config", "--no-session-persistence",
                    "--permission-mode", "dontAsk", "--tools", "", "--model", "claude-haiku-5-5", "--system-prompt", "Reply with OK."]
         try:
-            done = subprocess.run(command, input="OK?", capture_output=True, text=True, timeout=timeout, cwd=cwd,
-                                  env={**os.environ, "CLAUDE_CODE_DISABLE_CLAUDE_MDS": "1", "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"})
+            # Ends when the answer arrives. Waiting for the process to exit takes minutes while a run is going.
+            stdout, _, _ = ClaudeHost(cwd)._session(command, "OK?", timeout)
         except (OSError, subprocess.TimeoutExpired):
             return None
-    return parse_claude_usage(done.stdout)
+    return parse_claude_usage(stdout)
 
 
 def over_claude_budget(max_percent: float, read=claude_usage) -> str | None:

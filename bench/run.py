@@ -196,8 +196,39 @@ def spend(records_dir: Path) -> dict:
     return {**totals, "cost": round(cost, 4)}
 
 
+def save_record(out: Path, record: dict) -> None:
+    """Written as each PR ends, so what a crash loses is the PRs in flight and not the timings of the ones before them."""
+    path = out / "records" / f"{record['key']}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(json.dumps(record, indent=1))
+    temp.replace(path)
+
+
+def check_resume(out: Path, resume: bool, settings: dict) -> dict[str, dict]:
+    """The PRs a resumed run keeps. Reviewing them again would not reproduce them: answers replay from the cache, but tasks that were killed at a
+    deadline never reached it, so they would run again with a new deadline, and the PR would score what it did not do in its measured time."""
+    path = out / "run-settings.json"
+    if not resume:
+        path.write_text(json.dumps(settings, indent=1))
+        shutil.rmtree(out / "records", ignore_errors=True)
+        return {}
+    if not path.exists():
+        raise SystemExit(f"nothing to resume in {out}")
+    before = json.loads(path.read_text())
+    if before != settings:
+        raise SystemExit(f"cannot resume {out.name} with different settings: was {before}, now {settings}")
+    saved: dict[str, dict] = {}
+    for file in sorted((out / "records").glob("*.json")):
+        record = json.loads(file.read_text())
+        if not record.get("exit") and not record.get("host_failure") and (out / "findings" / f"{record['key']}.json").exists():
+            saved[record["key"]] = record
+    log(f"resuming {out.name}: keeping {len(saved)} finished PRs")
+    return saved
+
+
 def run(keys: list[str], name: str, *, skill_dir: Path, model: str, prs_at_once: int, concurrency: int, salt: str = "",
-        deadline: float | None = None, use_cache: bool = True, max_usage: float = 90, host: str = "opencode", effort: str | None = None) -> tuple[Path, list[dict]]:
+        deadline: float | None = None, use_cache: bool = True, max_usage: float = 90, host: str = "opencode", effort: str | None = None, resume: bool = False) -> tuple[Path, list[dict]]:
     out = RUNS / name
     out.mkdir(parents=True, exist_ok=True)
     (out / "AUDIT_FAILED").unlink(missing_ok=True)
@@ -206,36 +237,48 @@ def run(keys: list[str], name: str, *, skill_dir: Path, model: str, prs_at_once:
         log(f"could not fetch: {errors}")
     records: list[dict] = []
     started = time.time()
+    saved = check_resume(out, resume, {"skill_dir": str(skill_dir), "model": model, "salt": salt, "host": host, "effort": effort})
     # The meters are OpenCode Go's, so they say nothing about a run on another host.
     meters = host == "opencode"
     meter_before = usage_limits() if meters else None
     stopped: list[str] = []
-    checked = {"at": 0.0}
-    lock = threading.Lock()
+    meter = {"problem": None}
+    finished = threading.Event()
 
-    def claude_problem() -> str | None:
-        # Past the limit every session fails, including whoever is driving the run. Reading the meter costs a session, so not before every PR.
-        with lock:
-            if time.time() - checked["at"] < CLAUDE_CHECK_SECONDS:
-                return None
-            checked["at"] = time.time()
-        return over_claude_budget(max_usage)
+    def watch_claude() -> None:
+        # Past the limit every session fails, including whoever is driving the run. A reading can take minutes on a busy machine, so no PR waits for it.
+        while True:
+            meter["problem"] = over_claude_budget(max_usage) or meter["problem"]
+            if finished.wait(CLAUDE_CHECK_SECONDS):
+                return
+
+    if host == "claude":
+        threading.Thread(target=watch_claude, daemon=True).start()
 
     def work(key: str) -> dict | None:
+        if key in saved:
+            records.append(saved[key])
+            return saved[key]
         # One run has moved the 5-hour meter by more than half, so check before each PR, not just once.
-        problem = over_budget(max_usage) if meters else claude_problem() if host == "claude" else None
+        problem = over_budget(max_usage) if meters else meter["problem"]
         if problem:
             stopped.append(key)
             log(f"  not starting {key}: {problem}, limit {max_usage}%")
             return None
-        record = review_one(key, out, skill_dir=skill_dir, model=model, concurrency=concurrency, salt=salt, deadline=deadline, use_cache=use_cache, host=host, effort=effort)
+        try:
+            record = review_one(key, out, skill_dir=skill_dir, model=model, concurrency=concurrency, salt=salt, deadline=deadline, use_cache=use_cache, host=host, effort=effort)
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            # A bad checkout loses this PR, not the hours of work around it.
+            record = {"key": key, "exit": 1, "seconds": 0, "stderr_tail": repr(error)[-800:]}
         log(f"  [{len(records) + 1}/{len(ready)}] {key}: {record.get('kept', '?')} findings from {record.get('candidates', '?')} candidates "
             f"in {record['seconds']}s" + (f" EXIT {record['exit']}" if record["exit"] else "") + (f" HOST FAILURE {record.get('host_failure')}" if record.get("host_failure") else ""))
         records.append(record)
+        save_record(out, record)
         return record
 
     with cf.ThreadPoolExecutor(prs_at_once) as pool:
         list(pool.map(work, ready))
+    finished.set()
     audit = audit_run(out)
     (out / "run.json").write_text(json.dumps({"name": name, "host": host, "model": model, "effort": effort, "skill_dir": str(skill_dir), "salt": salt, "keys": ready,
                                               "seconds": round(time.time() - started, 1), "audit_problems": audit, "refused_calls": refused_calls(out),
@@ -262,6 +305,7 @@ def main() -> int:
     parser.add_argument("--salt", default="", help="a different salt gets fresh model samples despite the cache")
     parser.add_argument("--deadline", type=float)
     parser.add_argument("--no-cache", action="store_true")
+    parser.add_argument("--resume", action="store_true", help="keep the PRs this run name has finished, and review only the rest. Refuses different settings")
     parser.add_argument("--max-usage", type=float, default=90, help="stop starting PRs when the host's usage meter, OpenCode Go or Claude, reaches this percent")
     parser.add_argument("--no-judge", action="store_true")
     parser.add_argument("--classify", action="store_true")
@@ -269,7 +313,7 @@ def main() -> int:
     args = parser.parse_args()
     keys = resolve_keys(args.select)
     out, records = run(keys, args.name, skill_dir=args.skill_dir.resolve(), model=args.model, prs_at_once=args.prs_at_once,
-                       concurrency=args.concurrency, salt=args.salt, deadline=args.deadline, use_cache=not args.no_cache, max_usage=args.max_usage, host=args.host, effort=args.effort)
+                       concurrency=args.concurrency, salt=args.salt, deadline=args.deadline, use_cache=not args.no_cache, max_usage=args.max_usage, host=args.host, effort=args.effort, resume=args.resume)
     report = json.loads((out / "run.json").read_text())
     print(f"tokens: {report['tokens']}")
     print(f"usage meter: {report['meter_before']} to {report['meter_after']}".replace("'limited': False, ", "")[:400])
