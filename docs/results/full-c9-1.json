@@ -326,5 +326,28 @@
   "augmented_precision": 0.821,
   "augmented_recall": 0.82,
   "augmented_f1": 0.82
+ },
+ "stages": {
+  "raw_findings": 12417,
+  "issues_after_merging": 6626,
+  "verdicts": {
+   "confirmed": 3619,
+   "unverified": 2445,
+   "not_worth_raising": 250,
+   "uncertain": 192,
+   "refuted": 120
+  },
+  "comments": 7269,
+  "sessions_per_pr": {
+   "reading": 7.6,
+   "merging": 7.1,
+   "checking": 10.9
+  }
+ },
+ "leaderboard_rank_if_entered": {
+  "entries_counting_c9": 22,
+  "grounded_f1": 2,
+  "high_severity_f1": 3,
+  "augmented_f1": 2
  }
 }

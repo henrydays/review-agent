@@ -10,6 +10,52 @@ Every score on this page is judged by Claude Sonnet 5.5. The leaderboard judges 
 
 The candidate is `c9-few` (fingerprint `4221b3dcb7`), reviewed by Haiku 5.5 through the Claude Code CLI. **This is not what `skill/` ships.** The gate rejected c9 for taking 347 seconds per PR against a 330 limit, so `skill/pr-review` is still the older champion (`c8e50defc8`), which has never had a full run. [The patch from one to the other](results/c9-few.patch), [the aggregates as JSON](results/full-c9-1.json).
 
+### How c9 works
+
+c9 isn't a model. It is candidate 9 of this review agent, a set of prompts, settings and scripts, and every model session in it runs Haiku 5.5. Scripts do what can be done exactly, and short sessions do what needs judgment.
+
+```mermaid
+flowchart LR
+    PR([PR diff]) --> Prepare["<b>Prepare</b><br/>script<br/>split the diff, skip<br/>generated files, collect leads"]
+    Prepare -->|"parts of the diff, leads"| reading
+    subgraph reading["Reading sessions: Haiku 5.5 at high effort, for each part of the diff"]
+        direction TB
+        G1["General"]
+        G2["General, a second time"]
+        I["Intent, once for the whole PR"]
+        D["Drift"]
+        F["Failure paths"]
+    end
+    reading -->|"12,417 raw findings"| Group["<b>Group similar findings</b><br/>script"]
+    Group --> Merge["<b>Merge sessions</b><br/>Haiku 5.5<br/>are these the same issue?"]
+    Merge -->|"6,626 issues"| Check["<b>Check sessions</b><br/>Haiku 5.5, 6 issues at a time<br/>try to disprove each one"]
+    Check -->|"verdicts"| Final["<b>Finalize</b><br/>script<br/>drop what was disproved"]
+    Final -->|"7,269 comments"| Out([Review])
+    classDef script stroke-dasharray: 5 4
+    class Prepare,Group,Final script
+```
+
+Dashed boxes are scripts and solid boxes are model sessions. The counts are totals across all 219 PRs. There are more comments than issues because a problem spanning several files gets a comment in each.
+
+- **Sessions per PR.** It averages 7.6 reading, 7.1 merging and 10.9 checking sessions across the full run. A small PR has one part, so it gets 5 reading sessions, and a large one is split into up to 10 parts, with at most 16 reading sessions in all.
+- **What each one does.** `General` is an exhaustive sweep, and runs twice because a second sample finds different things. `Intent` asks whether the PR does what it claims, and what it removed. `Drift` covers tests, docs and consistency. `Failure paths` covers errors, concurrency, performance and security.
+- **Reading sessions are short and focused.** Each has a budget of 12 steps, read-only tools and no shell, and is given the code around its part of the diff.
+- **Checks need evidence.** A session that calls a finding wrong has to quote the code that shows it, and a script confirms the quote exists. If it doesn't, the finding stays, as `uncertain`.
+- **One deadline for the whole PR.** It is 420 seconds plus 30 per 1,000 lines changed, up to 480. Reading has to finish by 65% of it, merging by 72% and checking by 97.5%. A session running at its stage's cutoff is stopped, and an issue nobody checked stays in as `unverified`.
+- **How it differs from the skill in the repo.** The skill runs up to 11 focus areas, and c9 runs 4, with `general` twice. c9 also adds a new rule for dismissing findings, sets discovery to high effort, and turns off a pass over hunks nobody commented on. [The full patch](results/c9-few.patch).
+
+What the checking stage did to those 6,626 issues:
+
+| Verdict | Issues | Share | What happens |
+|---|---:|---:|---|
+| Confirmed | 3,619 | 55% | Kept |
+| Never checked, out of time or over the limit | 2,445 | 37% | Kept |
+| Uncertain | 192 | 3% | Kept |
+| Not worth raising | 250 | 4% | Dropped |
+| Disproved | 120 | 2% | Dropped |
+
+So this stage drops under 6% of issues, and over a third never reach it.
+
 ### Against OhMyBug
 
 | | c9, Haiku 5.5 | OhMyBug run 1 | Run 2 | Run 3 |
@@ -25,6 +71,8 @@ The candidate is `c9-few` (fingerprint `4221b3dcb7`), reviewed by Haiku 5.5 thro
 | Novel true positives | about 4,980 | 6,093 | 6,382 | 6,034 |
 | Mean time per PR | 340s | 339s | 313s | 315s |
 | PRs finished | 219 | 219 | 219 | 219 |
+
+If it were entered, c9 would rank 2 of 22 on grounded F1, 3 on high-severity F1 and 2 on augmented F1, counting each leaderboard configuration as an entry. It hasn't been submitted, so these aren't leaderboard places.
 
 OhMyBug's figures are from the ReviewBench leaderboard (site data is CC BY-NC 4.0). Grounded scores for c9 are macro-averaged over PRs, as the leaderboard's look to be, though that isn't confirmed. Pooled instead, they are P 84.7, R 56.2, F1 67.6.
 
@@ -74,7 +122,77 @@ By lines changed:
 - **Volume.** c9 writes 33.2 comments per PR, and OhMyBug about 37. Across the leaderboard, recall follows `-2.9 + 17.3 * ln(comments per PR)`, which predicts 57.7 at c9's volume. c9 scores 57.1, so it finds about what its volume predicts and has no lead there.
 - **False alarms.** The estimated share of unmatched findings that are false is 12.4%. That is what holds augmented precision at 86.1, and it is why novel yield falls short too. Before the full sample, a reading from 31 PRs had this at 6%. The Opus audit gives no reason to blame the judge for this, and it found both kinds of disagreement: findings Sonnet rejected as not worth raising though they were factually right, and findings Sonnet accepted that the code contradicts.
 - **Low-severity findings** are 1,551 of the 2,623 golden findings, with recall of only 48.8, and precision of 76.5.
+- **The checking stage drops little.** Under 6% of issues are dropped, and 37% are never checked, which [the table above](#how-c9-works) shows. A sharper check is the most direct way to remove false alarms.
 - **Verification on large PRs.** 61% of verify tasks on PRs of 2,000 lines or more never finish, and unverified candidates are kept. These PRs still have the highest grounded precision, so the verifier's value there needs a controlled test before more time goes to it. Lost sessions don't clearly explain missed findings either. On 43 `train` PRs, PRs of 300 to 2,000 lines had the same recall with and without lost discovery sessions (50.2 and 50.0). Above 2,000 lines the difference was larger (60.0 and 52.3), but on only 14 PRs. What remains is probably findings no lens ever reported, which hasn't been traced across `train` yet.
+
+### c9 against each model working alone
+
+To see what the model and its effort setting are worth, each Claude model also reviewed PRs alone, in a single session, and was judged the same way. A result named "Sonnet high" is Sonnet 5.5 at `high` effort, which sets how much thinking and checking it does before answering.
+
+```mermaid
+flowchart LR
+    subgraph alone["One model working alone"]
+        direction LR
+        A0([PR diff]) --> A1["<b>One session</b><br/>Haiku, Sonnet or Opus, at one effort<br/>general focus only, 60 steps<br/>no leads, no code around the diff"]
+        A1 -->|"raw findings"| A2([Review])
+    end
+    subgraph agent["Our agent, c9: Haiku 5.5 in every session"]
+        direction LR
+        B0([PR diff]) --> B1["Prepare<br/>script"]
+        B1 --> B2["<b>Reading sessions</b><br/>4 focus areas, 12 steps each"]
+        B2 -->|"raw findings"| B3["<b>Merge sessions</b>"]
+        B3 -->|"issues"| B4["<b>Check sessions</b>"]
+        B4 -->|"verdicts"| B5["Finalize<br/>script"]
+        B5 --> B6([Review])
+    end
+    A2 --> J{{"Judged by Sonnet 5.5"}}
+    B6 --> J
+    classDef script stroke-dasharray: 5 4
+    class B1,B5 script
+```
+
+These aren't bare models. Each session gets the reading prompt and the general focus from the skill in the repo, but nothing else from the pipeline. A truly bare prompt hasn't been run, and neither Sonnet nor Opus has run inside the pipeline.
+
+| | c9 | One model alone |
+|---|---|---|
+| Model | Haiku 5.5 | Haiku, Sonnet or Opus |
+| Effort | High for reading, default for the rest | One setting, from low to max |
+| Sessions per PR on these PRs | About 16 | 1 |
+| Prompts | c9's own | From the skill in the repo |
+| Focus | General twice, intent, drift, failure paths | General only |
+| Merges duplicates | Yes | No |
+| Checks findings against the code | Yes | No |
+| Time limit | One deadline per PR | None in practice |
+
+All on the same 4 `train` PRs, with 54 golden findings, judged by Sonnet 5.5:
+
+| Reviewer | P | R | F1 | High-severity F1 | Cost per PR | Mean time |
+|---|---:|---:|---:|---:|---:|---:|
+| **c9 on Haiku 5.5** | 93.0 | 73.6 | 82.2 | 83.3 | $0.187 | 324s |
+| Sonnet alone, max | 90.3 | 65.4 | 75.9 | 85.0 | $1.696 | 647s |
+| Opus alone, max | 87.7 | 65.6 | 75.0 | 74.1 | $2.902 | 770s, from an earlier run |
+| Haiku alone, max | 88.7 | 61.2 | 72.5 | 78.9 | $0.436 | 673s |
+| Sonnet alone, high | 90.6 | 54.1 | 67.8 | 75.7 | $0.192 | 82s |
+| Opus alone, medium | 92.7 | 52.4 | 66.9 | 75.7 | $0.393 | 89s |
+| Haiku alone, high | 90.8 | 52.5 | 66.6 | 78.9 | $0.066 | 198s |
+| Sonnet alone, medium | 97.2 | 48.0 | 64.3 | 72.9 | $0.128 | 58s |
+| Opus alone, high | 91.0 | 49.4 | 64.0 | 75.7 | $0.606 | 113s |
+| Sonnet alone, low | 91.7 | 35.8 | 51.5 | 63.9 | $0.025 | 25s |
+| Haiku alone, medium | 94.4 | 23.4 | 37.6 | 51.7 | $0.016 | 83s |
+
+Read this as a direction, not a ranking:
+
+- **These PRs flatter the top setups.** They were picked for size spread and golden count, after their earlier scores had been seen. On the original 8 PRs, c9 scores F1 73.7 and Opus alone at max 69.0.
+- **Runs swing widely.** Haiku at medium scored 56.8 on these same PRs in an earlier run, and 37.6 here, so only large gaps mean anything.
+- **It isn't a like-for-like test of models.** c9 uses different prompts and many sessions, so this shows Haiku inside a pipeline against each model alone. The prompt for models alone also asks how each finding was found, which adds some output.
+
+What it suggests: c9 costs about what one Sonnet session at high effort costs, and finds more. Max effort is the only setting that clearly lifts a model alone, and it takes over 10 minutes per PR. At high effort, Sonnet answers in well under half of Haiku's time, which makes it worth testing inside the pipeline, since discovery takes most of a PR's time. Sonnet's tokens cost 20 times Haiku's, so that would raise cost.
+
+To repeat a row, using the PRs in [the data file](results/model-comparison.json):
+
+```sh
+python3 bench/teacher.py run --who sonnet-high --select KEYS --name cmp-sonnet-high --at-once 4
+```
 
 ### Time and cost
 
