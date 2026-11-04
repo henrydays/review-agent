@@ -14,7 +14,7 @@ We built an AI agent that reviews code changes, and tested it on ReviewBench, a 
 
 **What we learned:**
 
-- **A more capable AI model finds no more, and costs far more.** On a small test, the same agent found about the same issues on all three models, while the most capable one cost about 23 times as much as the low-cost one.
+- **A more capable AI model finds no more, and costs far more.** On a small test, the same agent found about the same number of issues on all three models, while the most capable one cost about 23 times as much as the low-cost one. They don't all find the same ones: 29 of the 54 known issues were found by all three, and 47 by at least one.
 - **To find more, the agent has to look differently.** In a detailed trace on part of the benchmark, it missed 598 known issues, and no reviewer in the agent ever raised 544 of them.
 - **Wrong comments are the biggest gap.** The step that challenges findings removed only 370 of 6,626 possible issues, and never reached 2,445, mostly in the largest changes.
 
@@ -234,7 +234,7 @@ The same pipeline, prompts, deadlines and effort settings, with one model in eve
 | Sonnet 5.5 | 87.8 | 69.9 | 77.8 | 89.5 | 38 of 54 | 14.8 | $1.511 | 147s | 91.7% (74 to 98) |
 | Opus 5.5 | 94.3 | 72.0 | 81.7 | 78.3 | 39 of 54 | 20.2 | $3.958 | 202s | 96.4% (82 to 99) |
 
-- **A stronger model doesn't raise recall here.** Every model finds 38 or 39 of the 54 golden findings, so more recall has to come from what the pipeline asks, not from the model.
+- **A stronger model doesn't raise recall here.** Every model finds 38 or 39 of the 54 golden findings, so buying a stronger model doesn't buy more recall. They differ in which ones they find: all three found 29, and at least one found 47. Two Haiku runs share 36 and together reach 42, so different sessions reach different findings, and different models somewhat more.
 - **It may lower false alarms.** The true rate rises from Haiku to Sonnet to Opus, in line with OhMyBug's use of Opus. Each estimate rests on about 30 findings, and the intervals overlap, so this is a lead to test and not a result.
 - **It costs far more.** Sonnet costs about 9 times as much as Haiku here, and Opus about 23 times.
 - **Sonnet is the fastest, and time depends on what runs alongside.** Sonnet takes 147 seconds. The two Haiku runs of the same PRs took 324 and 236 seconds. The first ran beside other PRs in the full run, and the second ran with only these PRs on the machine.
