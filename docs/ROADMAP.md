@@ -17,7 +17,7 @@ Everything is judged by **Claude Sonnet 5.5 or better**, never Sonnet 5 or DeepS
 | The skill | Built and tested. `skill/pr-review` is still the older champion, since the gate rejected c9 on time. c9 has a full run and the champion doesn't |
 | Reviewers through Claude Code and Codex | Working, isolated, and audited. `bench/preflight.py --host claude` checks it |
 | Teachers | `bench/teacher.py` runs a strong model once over a PR, and `loop/compare.py` shows what it found that Haiku missed |
-| Numbers | [The first full run](RESULTS.md), on candidate c9 and judged by Sonnet 5.5: grounded P 82.7, R 57.1, F1 67.5, and estimated augmented P 86.0, R 82.5. It doesn't match OhMyBug yet. Provisional until 6 disturbed PRs are redone |
+| Numbers | [The first full run](RESULTS.md), on candidate c9 and judged by Sonnet 5.5: grounded P 82.8, R 57.1, F1 67.6, and estimated augmented P 86.1, R 82.6. It doesn't match OhMyBug yet |
 | The loop | Reviews with Haiku 5.5 through Claude Code and judges with Sonnet 5.5. `evaluate` is in use, with 7 experiments in `loop/ledger.jsonl`, written by Opus 5.5 sessions. `iterate`'s automated improver still defaults to DeepSeek on OpenCode |
 | The maintainer corpus | Built: 221 PRs and 826 true findings from 35 projects, including 23 Linux patch series. Works end to end with Haiku 5.5, on two PRs. No baseline yet |
 

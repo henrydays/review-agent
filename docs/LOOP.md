@@ -58,7 +58,7 @@ Models are set by `--host`, `--model`, `--effort` and `--judge-model`. The defau
 
 Two runs of the same version on the 16 training PRs can differ by more than a real change does. Fresh runs of one set of discovery prompts covered between 24 and 29 of the 34 high-severity findings. So test a change to verification or to which sessions run by replaying the same cached discovery, as `bench/run.py --skill-dir` does when the discovery prompts are unchanged, and compare only what changed. Pass `--validate-anyway` to `evaluate` when a controlled test already supports a change: it skips the filter on training PRs, which only saves money, and the decision on validation PRs still applies.
 
-Small sets also flatter. One candidate scored F1 74.2 on the 25 PRs of `train_quick` and `val_quick`, and 67.5 on all 219. A run in progress is no better: PRs run in alphabetical order, so repositories cluster, and the same run read 69.7 at 148 PRs. A reading from 31 PRs had 94% of unmatched findings true, and the full sample says 87.3%.
+Small sets also flatter. One candidate scored F1 74.2 on the 25 PRs of `train_quick` and `val_quick`, and 67.6 on all 219. A run in progress is no better: PRs run in alphabetical order, so repositories cluster, and the same run read 69.7 at 148 PRs. A reading from 31 PRs had 94% of unmatched findings true, and the full sample says 87.6%.
 
 ### Measuring time
 

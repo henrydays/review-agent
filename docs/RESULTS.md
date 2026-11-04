@@ -8,33 +8,31 @@ Every score on this page is judged by Claude Sonnet 5.5. The leaderboard judges 
 
 **It does not match OhMyBug yet.** Grounded precision is level, and grounded recall is 3 points short. Augmented precision is 6 points short, which is the clearest gap. Time is level with OhMyBug's slowest run.
 
-> **Provisional.** These scores include 6 PRs whose reviews were disturbed, see [what disturbed the run](#what-disturbed-the-run). They are being reviewed again, and this page will be updated when they have been judged.
-
 The candidate is `c9-few` (fingerprint `4221b3dcb7`), reviewed by Haiku 5.5 through the Claude Code CLI. **This is not what `skill/` ships.** The gate rejected c9 for taking 347 seconds per PR against a 330 limit, so `skill/pr-review` is still the older champion (`c8e50defc8`), which has never had a full run. [The patch from one to the other](results/c9-few.patch), [the aggregates as JSON](results/full-c9-1.json).
 
 ### Against OhMyBug
 
 | | c9, Haiku 5.5 | OhMyBug run 1 | Run 2 | Run 3 |
 |---|---:|---:|---:|---:|
-| Grounded precision | 82.7 | 81.9 | 81.9 | 81.2 |
+| Grounded precision | 82.8 | 81.9 | 81.9 | 81.2 |
 | Grounded recall | 57.1 | 60.1 | 60.2 | 60.2 |
-| Grounded F1 | 67.5 | 69.3 | 69.4 | 69.1 |
-| Augmented precision | 86.0 | 92.5 | 92.7 | 92.0 |
-| Augmented recall | 82.5 | 85.5 | 85.8 | 84.8 |
-| Augmented F1 | 84.2 | 88.8 | 89.1 | 88.3 |
-| Novel yield | 61.9 | 71.7 | 72.5 | 70.7 |
-| Comments (candidates) | 7,230 | 8,057 | 8,341 | 7,973 |
-| Novel true positives | about 4,930 | 6,093 | 6,382 | 6,034 |
-| Mean time per PR | 342s | 339s | 313s | 315s |
+| Grounded F1 | 67.6 | 69.3 | 69.4 | 69.1 |
+| Augmented precision | 86.1 | 92.5 | 92.7 | 92.0 |
+| Augmented recall | 82.6 | 85.5 | 85.8 | 84.8 |
+| Augmented F1 | 84.3 | 88.8 | 89.1 | 88.3 |
+| Novel yield | 62.1 | 71.7 | 72.5 | 70.7 |
+| Comments (candidates) | 7,269 | 8,057 | 8,341 | 7,973 |
+| Novel true positives | about 4,980 | 6,093 | 6,382 | 6,034 |
+| Mean time per PR | 340s | 339s | 313s | 315s |
 | PRs finished | 219 | 219 | 219 | 219 |
 
-OhMyBug's figures are from the ReviewBench leaderboard (site data is CC BY-NC 4.0). Grounded scores for c9 are macro-averaged over PRs, as the leaderboard's look to be, though that isn't confirmed. Pooled instead, they are P 84.7, R 56.1, F1 67.5.
+OhMyBug's figures are from the ReviewBench leaderboard (site data is CC BY-NC 4.0). Grounded scores for c9 are macro-averaged over PRs, as the leaderboard's look to be, though that isn't confirmed. Pooled instead, they are P 84.7, R 56.2, F1 67.6.
 
 Reasons to be careful with this table:
 
 - **The judges differ**, as above.
-- **Augmented scores here are an estimate**, from classifying 806 sampled findings out of 5,649 unmatched ones. 87.3% of them were true (95% interval 84.9 to 89.5). OhMyBug's are from full classification.
-- **This is one run, not three.** Resampling PRs gives 95% intervals of P 79.8 to 85.5, R 54.3 to 59.8, and F1 65.1 to 69.8. So the lead on grounded precision is noise, the F1 gap is within the interval, and the recall gap is just outside it. The interval does not cover the difference between judges.
+- **Augmented scores here are an estimate**, from classifying 822 sampled findings out of 5,683 unmatched ones. 87.6% of them were true (95% interval 85.2 to 89.7). OhMyBug's are from full classification.
+- **This is one run, not three.** Resampling PRs gives 95% intervals of P 79.9 to 85.6, R 54.4 to 59.8, and F1 65.3 to 69.9. So the lead on grounded precision is noise, the F1 gap is within the interval, and the recall gap is just outside it. The interval does not cover the difference between judges.
 - **The reviewers differ.** OhMyBug's vendor describes two independent Opus 5.5 reviewers. c9 runs Haiku 5.5, at an estimated $0.38 per PR. OhMyBug's cost isn't published, so the table has no cost row.
 
 ### Where the scores come from
@@ -43,19 +41,19 @@ By severity:
 
 | Severity | Macro P | Macro R | Macro F1 | Golden findings covered |
 |---|---:|---:|---:|---:|
-| High | 90.9 | 68.0 | 77.8 | 106 of 181 |
-| Medium | 93.0 | 70.1 | 79.9 | 620 of 891 |
-| Low | 76.2 | 48.7 | 59.4 | 745 of 1,551 |
+| High | 90.8 | 66.4 | 76.7 | 105 of 181 |
+| Medium | 92.8 | 70.1 | 79.9 | 621 of 891 |
+| Low | 76.5 | 48.8 | 59.6 | 748 of 1,551 |
 
-The leaderboard's high-severity row for OhMyBug is R 75.6, P 92.0, so high-severity recall is about 7.6 points short.
+The leaderboard's high-severity row for OhMyBug is R 75.6, P 92.0, so high-severity recall is about 9 points short. With so few high-severity findings it swings easily: redoing 6 PRs moved it from 68.0 to 66.4.
 
 By split:
 
 | Split | PRs | P | R | F1 | Comments per PR | Mean time | Cost per PR |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `train` | 114 | 80.7 | 55.6 | 65.8 | 31.5 | 338s | $0.38 |
+| `train` | 114 | 81.2 | 55.6 | 66.0 | 31.8 | 338s | $0.39 |
 | `val` | 22 | 88.9 | 60.4 | 71.9 | 39.5 | 345s | $0.41 |
-| `holdout` | 74 | 83.9 | 56.7 | 67.7 | 35.7 | 358s | $0.39 |
+| `holdout` | 74 | 83.6 | 56.9 | 67.7 | 35.9 | 355s | $0.39 |
 | `val_siblings_unused` | 9 | 83.1 | 71.2 | 76.7 | 13.6 | 255s | $0.14 |
 
 `holdout` scores above `train`, so there is no sign that c9 overfits the PRs it was designed from.
@@ -64,32 +62,32 @@ By lines changed:
 
 | Lines | PRs | P | R | F1 | Comments per PR | Mean time | Cost per PR | Verify tasks lost |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Under 100 | 38 | 76.4 | 65.3 | 70.5 | 10.9 | 236s | $0.11 | 0 of 145 |
-| 100 to 300 | 41 | 84.7 | 55.5 | 67.1 | 15.0 | 271s | $0.14 | 13 of 223 |
+| Under 100 | 38 | 77.8 | 65.3 | 71.0 | 10.8 | 233s | $0.11 | 0 of 143 |
+| 100 to 300 | 41 | 84.0 | 55.8 | 67.1 | 15.2 | 271s | $0.15 | 2 of 223 |
 | 300 to 800 | 47 | 79.5 | 53.8 | 64.2 | 21.1 | 328s | $0.22 | 13 of 368 |
-| 800 to 2,000 | 42 | 83.4 | 56.5 | 67.4 | 33.4 | 381s | $0.40 | 84 of 479 |
-| 2,000 and up | 51 | 88.1 | 55.6 | 68.2 | 74.6 | 451s | $0.89 | 944 of 1,515 |
+| 800 to 2,000 | 42 | 83.4 | 56.7 | 67.5 | 34.2 | 383s | $0.41 | 82 of 484 |
+| 2,000 and up | 51 | 88.2 | 55.4 | 68.1 | 74.6 | 450s | $0.90 | 932 of 1,520 |
 
 ### Where the gap is
 
-- **Volume.** c9 writes 33.0 comments per PR, and OhMyBug about 37. Across the leaderboard, recall follows `-2.9 + 17.3 * ln(comments per PR)`, which predicts 57.6 at c9's volume. c9 scores 57.1, so it finds about what its volume predicts and has no lead there.
-- **False alarms.** The estimated share of unmatched findings that are false is 12.7%. That is what holds augmented precision at 86.0, and it is why novel yield falls short too. Before the full sample, a reading from 31 PRs had this at 6%.
-- **Low-severity findings** are 1,551 of the 2,623 golden findings, with recall of only 48.7, and precision of 76.2.
-- **Verification on large PRs.** 62% of verify tasks on PRs of 2,000 lines or more never finish, and unverified candidates are kept. These PRs still have the highest grounded precision, so the verifier's value there needs a controlled test before more time goes to it. Lost sessions don't clearly explain missed findings either. On 43 `train` PRs, PRs of 300 to 2,000 lines had the same recall with and without lost discovery sessions (50.2 and 50.0). Above 2,000 lines the difference was larger (60.0 and 52.3), but on only 14 PRs. What remains is probably findings no lens ever reported, which hasn't been traced across `train` yet.
+- **Volume.** c9 writes 33.2 comments per PR, and OhMyBug about 37. Across the leaderboard, recall follows `-2.9 + 17.3 * ln(comments per PR)`, which predicts 57.7 at c9's volume. c9 scores 57.1, so it finds about what its volume predicts and has no lead there.
+- **False alarms.** The estimated share of unmatched findings that are false is 12.4%. That is what holds augmented precision at 86.1, and it is why novel yield falls short too. Before the full sample, a reading from 31 PRs had this at 6%.
+- **Low-severity findings** are 1,551 of the 2,623 golden findings, with recall of only 48.8, and precision of 76.5.
+- **Verification on large PRs.** 61% of verify tasks on PRs of 2,000 lines or more never finish, and unverified candidates are kept. These PRs still have the highest grounded precision, so the verifier's value there needs a controlled test before more time goes to it. Lost sessions don't clearly explain missed findings either. On 43 `train` PRs, PRs of 300 to 2,000 lines had the same recall with and without lost discovery sessions (50.2 and 50.0). Above 2,000 lines the difference was larger (60.0 and 52.3), but on only 14 PRs. What remains is probably findings no lens ever reported, which hasn't been traced across `train` yet.
 
 ### Time and cost
 
-Reviews ran from 07:40 to 18:11, and judging finished at 18:35. Mean time is over the 196 PRs with clean timing, leaving out those listed under [what disturbed the run](#what-disturbed-the-run) and those replayed in part from the cache. All 219 together average 340 seconds.
+Reviews ran from 07:40 to 18:11, and judging finished at 18:35. Reviewing 6 PRs again and judging those took until 18:58. Mean time is over the 202 PRs with clean timing, leaving out those listed under [what disturbed the run](#what-disturbed-the-run) that weren't reviewed again. All 219 together average 337 seconds.
 
-Cost is what Claude Code reports at API rates, since this account is on a subscription. It's a floor, because a session killed at a deadline never reports its cost. The total is $82.45, or $0.376 per PR, with these shares:
+Cost is what Claude Code reports at API rates, since this account is on a subscription. It's a floor, because a session killed at a deadline never reports its cost. The total is $83.27, or $0.380 per PR, with these shares:
 
 | Stage | Tasks | Not finished | Share of cost | Cost per task | Mean task time |
 |---|---:|---:|---:|---:|---:|
-| Discover | 1,668 | 174 (10%) | 87% | $0.044 | 186s |
-| Dedupe | 1,593 | 117 (7%) | 1% | $0.0007 | 18s |
-| Verify | 2,730 | 1,054 (39%) | 12% | $0.0036 | 81s |
+| Discover | 1,668 | 166 (10%) | 87% | $0.044 | 185s |
+| Dedupe | 1,603 | 116 (7%) | 1% | $0.0007 | 18s |
+| Verify | 2,738 | 1,029 (38%) | 12% | $0.0037 | 80s |
 
-"Not finished" counts tasks that failed, were skipped, or were cut off. Judging is separate, and came to at least $81 at API rates, nearly all of it classifying unmatched findings. Judging partway through the run isn't in that figure. The run moved the account's weekly meter from 47% to 58%, including this session's own use.
+"Not finished" counts tasks that failed, were skipped, or were cut off. Judging is separate, and came to at least $84 at API rates, nearly all of it classifying unmatched findings. Judging partway through the run isn't in that figure. The run moved the account's weekly meter from 47% to 58%, including this session's own use.
 
 ### Making it cheaper and faster
 
@@ -115,24 +113,24 @@ The goal before this run was to cut cost and time by choosing lenses and session
 
 **PRs at once.** Three at once was tried for part of the run, and made every size slower. Time for PRs under 100 lines went from 210 to 297 seconds, and the share of PRs under 2,000 lines losing sessions went from 3 of 33 to 5 of 13. [Measuring time](LOOP.md#measuring-time) has what is known about why.
 
-**The outcome is unconfirmed.** On 25 PRs, c9 was 13% faster and 10% cheaper than the champion, with a better F1 (319s against 368s, $0.35 against $0.39, F1 74.2 against 71.2). The full run came in above that estimate, at 342s and at least $0.376, but the champion has no full run, so the difference at full scale isn't known. The speed target isn't met: 342s is slower than all three of OhMyBug's runs, though only just slower than the slowest.
+**The outcome is unconfirmed.** On 25 PRs, c9 was 13% faster and 10% cheaper than the champion, with a better F1 (319s against 368s, $0.35 against $0.39, F1 74.2 against 71.2). The full run came in above that estimate, at 340s and at least $0.380, but the champion has no full run, so the difference at full scale isn't known. The speed target isn't met: 340s is slower than all three of OhMyBug's runs, though only 1 second behind the slowest.
 
 ### Readings that did not hold
 
 Partway through this run, some early readings were reported that the full run contradicted:
 
 - **"Tied on F1."** At 148 PRs, F1 was 69.7. PRs run in alphabetical order, so repositories cluster, and the last 71 PRs scored 62.8. Don't call a partial run.
-- **"The gap is coverage, not false alarms."** That came from 31 PRs where 94% of unmatched findings were true. The full sample says 87.3%.
+- **"The gap is coverage, not false alarms."** That came from 31 PRs where 94% of unmatched findings were true. The full sample says 87.6%.
 - **"Lost sessions on large PRs are what costs recall."** 43 `train` PRs gave no clear support for this.
-- **The projection of 321 seconds and $0.35 per PR,** which came from the 25 PRs. Those PRs flatter c9 in general: F1 was 74.2 on them, and 67.5 on all 219.
+- **The projection of 321 seconds and $0.35 per PR,** which came from the 25 PRs. Those PRs flatter c9 in general: F1 was 74.2 on them, and 67.6 on all 219.
 
 ### What disturbed the run
 
 - **Timing probes.** A burst of 20 sessions, run next to the live benchmark to investigate slow starts, pushed 2 PRs into their deadlines at a cost of 21 tasks. Nothing heavy should run next to a timed run.
-- **Three at once.** 18 PRs ran under that test, and are left out of timing. 4 of them were under 2,000 lines and still lost tasks.
-- **Restarts.** 5 PRs were interrupted and resumed, so they replayed finished tasks from the cache, and their times are too low. They are left out of timing.
+- **Three at once.** 18 PRs ran under that test. 4 of them were under 2,000 lines and still lost tasks.
+- **Restarts.** 5 PRs were interrupted and resumed, so they replayed finished tasks from the cache, and their times are too low.
 
-The 6 PRs most affected, the first 2 and those 4, are being reviewed again with a new salt.
+The 6 PRs most affected, the first 2 and those 4, were reviewed again with a new salt, and those reviews replaced the originals. This moved the totals by about 0.1 point. The other 14 PRs from the three-at-once test, and the 5 replayed PRs, keep their scores but are left out of timing.
 
 ### What comes next
 
