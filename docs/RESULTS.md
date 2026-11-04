@@ -7,10 +7,25 @@ We built an AI agent that reviews code changes, and tested it on ReviewBench, a 
 | | Our agent | OhMyBug, the leader |
 |---|---:|---:|
 | Overall score | 67.6 | 69.3 |
-| Known issues found | 57.1% | 60.2% |
-| Comments that were right, ours estimated from a sample | 86.1% | 92.4% |
+| Recall: known issues found | 57.1% | 60.2% |
+| Serious issues found | 66.4% | 75.6% |
+| Precision: right, of comments matching a known issue | 82.8% | 81.7% |
+| All comments that were right, ours estimated from a sample | 86.1% | 92.4% |
 | Time per code change | 5 min 40 s | 5 min 22 s |
 | Cost per code change, at list prices | At least $0.38 | Not published |
+
+**What the two scores mean:**
+
+- **Recall: how much does it catch?** Of the known problems in a code change, the share the reviewer finds. It tells you how much protection the reviewer gives.
+- **Precision: can you trust what it says?** Of the comments the benchmark can judge, the share that are real. It tells you whether the feedback is worth acting on.
+
+They pull against each other. A reviewer that comments on everything finds more and adds noise. One that says almost nothing is rarely wrong and rarely useful. Both matter: wrong comments cost people time and then their trust, and coding agents can turn them into unnecessary code. Missed bugs go out, and if a team relies on the reviewer, silence creates confidence nobody has earned.
+
+**The conclusion we took:** treat precision as a requirement, then catch as many serious bugs as possible within an acceptable level of false alarms. The highest precision alone doesn't make the best reviewer. On serious issues, HeyDeer leads at 99.0% precision and finds 51.4% of them, and OhMyBug is at 92.0% and finds 75.6%. Once comments are reliably right, finding more serious bugs is usually worth more than another small gain in precision.
+
+For our agent, that means two things. Serious issues are where recall matters most, and we find 66.4% of them. We also need to cut wrong comments, which we estimate at about 4.3 per code change. We'd track both together, along with the time people spend on false alarms. We haven't yet set what level of false alarms is acceptable.
+
+This reasoning draws on an article by HeyDeer, a competitor on the benchmark ("HeyDeer has the highest precision on ReviewBench", October 2026), and on our own review of its argument. The score definitions follow ReviewBench's methodology.
 
 **What we learned:**
 
@@ -23,9 +38,9 @@ We built an AI agent that reviews code changes, and tested it on ReviewBench, a 
 1. **Should we allow a stronger model for the challenge step?** This is the most direct way we see to cut wrong comments. It departs from the goal of using only the low-cost model, and we roughly estimate it would raise the cost to about $0.60 per code change. That hasn't been measured. We recommend testing it, which uses little of the usage allowance.
 2. **Should the work resume?** The next steps are to finish testing a sharper challenge step, then rerun the full benchmark, which takes about 11 hours and about 11% of the weekly usage allowance. We recommend resuming. The gap is small enough to be worth closing, though we can't promise that it will close.
 
-**How far to trust this:** we score with a newer AI judge than the benchmark uses, and nobody has measured how much that changes the results. Our score is from one run and the leader's is an average of three. The model test covers only a few code changes. The cost is what the usage would cost at list prices, not what we paid. The version tested here is a candidate, and the agent in the repository is still an older one.
+**How far to trust this:** neither score is the whole picture. Precision only counts comments that match the benchmark's known issues, and recall only covers issues the benchmark knows about, and its list isn't complete. We score with a newer AI judge than the benchmark uses, and nobody has measured how much that changes the results. Our score is from one run and the leader's is an average of three. The model test covers only a few code changes. The cost is what the usage would cost at list prices, not what we paid. The version tested here is a candidate, and the agent in the repository is still an older one.
 
-Everything below is technical detail for the engineering team. Here, c9 is our agent's current version, precision and recall are the scoring terms for "right" and "found", and F1 is the overall score.
+Everything below is technical detail for the engineering team. Here, c9 is our agent's current version, grounded scores are the precision and recall explained above, augmented scores also count comments outside the known issues, and F1 is the overall score.
 
 ## Technical detail
 
