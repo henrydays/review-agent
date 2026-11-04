@@ -305,5 +305,26 @@
  "judge_usage": {
   "calls": 43,
   "cache_hits": 1428
+ },
+ "opus_audit": {
+  "judge": "claude-opus-5-5 at max effort",
+  "answered": 88,
+  "asked": 100,
+  "sonnet_true_opus_true": [
+   39,
+   44
+  ],
+  "sonnet_false_opus_true": [
+   15,
+   44
+  ],
+  "true_rate_weighted": 0.819,
+  "true_rate_95": [
+   0.735,
+   0.903
+  ],
+  "augmented_precision": 0.821,
+  "augmented_recall": 0.82,
+  "augmented_f1": 0.82
  }
 }

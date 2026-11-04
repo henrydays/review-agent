@@ -47,6 +47,17 @@ What this shows:
 
 Weighted back to all unmatched findings, Sonnet's 74.5% true rate becomes about 87% if the Opus and Astra consensus is right. That estimate rests on 28 findings.
 
+## An audit of a full run
+
+On 2026-11-04, Opus 5.5 at max effort re-classified a sample of Sonnet 5.5's labels from [a full run](RESULTS.md): 50 findings Sonnet called true and 50 it called false, across all 219 PRs, read only in aggregate because most of those PRs are `val` or `holdout`. It answered 88.
+
+| Sonnet 5.5 said | Opus 5.5 max agreed | Opus overturned |
+|---|---:|---:|
+| True | 39 of 44 | 5 |
+| False | 29 of 44 | 15 |
+
+Weighted back to all unmatched findings, Sonnet's 87.6% true rate becomes 81.9% (95% interval 73.5 to 90.3). So the earlier reading above, where the true rate rose under stronger judges, didn't repeat on this agent. On `train` PRs the two judges still differ mostly as described above: Opus accepts factually right findings that Sonnet rejects as not worth raising. It also rejects findings Sonnet accepted without checking enough code. Sonnet 5.5 remains a usable steering judge, but its number isn't a floor.
+
 ## Why not simply use the stronger judge?
 
 - **Cost.** Opus max costs about 14 times as much per finding. Classifying a full benchmark run this way would cost thousands of dollars.
@@ -55,4 +66,4 @@ Weighted back to all unmatched findings, Sonnet's 74.5% true rate becomes about 
 
 ## What this does not establish
 
-There is no human ground truth here. A consensus of Opus and Astra is two models agreeing, and they both read the same rubric. The samples are small: 40 findings, of which both stronger judges answered 34. So treat the matching result as firm and the classifying result as a direction: Sonnet 5.5 is a usable, strict steering judge, and its augmented numbers may understate the agent. They are not a verdict on it.
+There is no human ground truth here. A consensus of Opus and Astra is two models agreeing, and they both read the same rubric. The samples are small: 40 findings, of which both stronger judges answered 34. So treat the matching result as firm and the classifying result as a direction: Sonnet 5.5 is a usable, strict steering judge, and its augmented numbers may understate or overstate the agent. They are not a verdict on it.

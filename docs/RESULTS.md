@@ -32,6 +32,7 @@ Reasons to be careful with this table:
 
 - **The judges differ**, as above.
 - **Augmented scores here are an estimate**, from classifying 822 sampled findings out of 5,683 unmatched ones. 87.6% of them were true (95% interval 85.2 to 89.7). OhMyBug's are from full classification.
+- **Sonnet 5.5 isn't simply a harsh judge here.** Opus 5.5 at max effort re-classified a balanced sample of its labels, and answered 88 of 100. It agreed with 39 of the 44 findings Sonnet called true, and overturned 15 of the 44 it called false, using about 14 tool calls per finding. Weighted back, the share of unmatched findings that are true is 81.9% (95% interval 73.5 to 90.3) against Sonnet's 87.6%, which would make augmented P 82.1, R 82.0, F1 82.0. Sonnet is the working judge and Opus the audit, so neither replaces the other, and this doesn't measure Sonnet 5. To reach OhMyBug's augmented precision on Sonnet's scale, about 96% of unmatched findings would have to be true.
 - **This is one run, not three.** Resampling PRs gives 95% intervals of P 79.9 to 85.6, R 54.4 to 59.8, and F1 65.3 to 69.9. So the lead on grounded precision is noise, the F1 gap is within the interval, and the recall gap is just outside it. The interval does not cover the difference between judges.
 - **The reviewers differ.** OhMyBug's vendor describes two independent Opus 5.5 reviewers. c9 runs Haiku 5.5, at an estimated $0.38 per PR. OhMyBug's cost isn't published, so the table has no cost row.
 
@@ -71,7 +72,7 @@ By lines changed:
 ### Where the gap is
 
 - **Volume.** c9 writes 33.2 comments per PR, and OhMyBug about 37. Across the leaderboard, recall follows `-2.9 + 17.3 * ln(comments per PR)`, which predicts 57.7 at c9's volume. c9 scores 57.1, so it finds about what its volume predicts and has no lead there.
-- **False alarms.** The estimated share of unmatched findings that are false is 12.4%. That is what holds augmented precision at 86.1, and it is why novel yield falls short too. Before the full sample, a reading from 31 PRs had this at 6%.
+- **False alarms.** The estimated share of unmatched findings that are false is 12.4%. That is what holds augmented precision at 86.1, and it is why novel yield falls short too. Before the full sample, a reading from 31 PRs had this at 6%. The Opus audit gives no reason to blame the judge for this, and it found both kinds of disagreement: findings Sonnet rejected as not worth raising though they were factually right, and findings Sonnet accepted that the code contradicts.
 - **Low-severity findings** are 1,551 of the 2,623 golden findings, with recall of only 48.8, and precision of 76.5.
 - **Verification on large PRs.** 61% of verify tasks on PRs of 2,000 lines or more never finish, and unverified candidates are kept. These PRs still have the highest grounded precision, so the verifier's value there needs a controlled test before more time goes to it. Lost sessions don't clearly explain missed findings either. On 43 `train` PRs, PRs of 300 to 2,000 lines had the same recall with and without lost discovery sessions (50.2 and 50.0). Above 2,000 lines the difference was larger (60.0 and 52.3), but on only 14 PRs. What remains is probably findings no lens ever reported, which hasn't been traced across `train` yet.
 
