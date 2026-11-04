@@ -1,5 +1,34 @@
 # Full benchmark results
 
+## Summary for directors
+
+We built an AI agent that reviews code changes, and tested it on ReviewBench, a public benchmark of 219 real code changes. **If entered, it would place 2 of 22, just behind the leader, OhMyBug, and at low cost. It isn't ahead yet:** it finds slightly fewer known issues, and more of its comments are wrong. These results are unofficial, since the agent hasn't been submitted. All work on it is paused.
+
+| | Our agent | OhMyBug, the leader |
+|---|---:|---:|
+| Overall score | 67.6 | 69.3 |
+| Known issues found | 57.1% | 60.2% |
+| Comments that were right, ours estimated from a sample | 86.1% | 92.4% |
+| Time per code change | 5 min 40 s | 5 min 22 s |
+| Cost per code change, at list prices | At least $0.38 | Not published |
+
+**What we learned:**
+
+- **A more capable AI model finds no more, and costs far more.** On a small test, the same agent found about the same issues on all three models, while the most capable one cost about 23 times as much as the low-cost one.
+- **To find more, the agent has to look differently.** In a detailed trace on part of the benchmark, it missed 598 known issues, and no reviewer in the agent ever raised 544 of them.
+- **Wrong comments are the biggest gap.** The step that challenges findings removed only 370 of 6,626 possible issues, and never reached 2,445, mostly in the largest changes.
+
+**Decisions needed:**
+
+1. **Should we allow a stronger model for the challenge step?** This is the most direct way we see to cut wrong comments. It departs from the goal of using only the low-cost model, and we roughly estimate it would raise the cost to about $0.60 per code change. That hasn't been measured. We recommend testing it, which uses little of the usage allowance.
+2. **Should the work resume?** The next steps are to finish testing a sharper challenge step, then rerun the full benchmark, which takes about 11 hours and about 11% of the weekly usage allowance. We recommend resuming. The gap is small enough to be worth closing, though we can't promise that it will close.
+
+**How far to trust this:** we score with a newer AI judge than the benchmark uses, and nobody has measured how much that changes the results. Our score is from one run and the leader's is an average of three. The model test covers only a few code changes. The cost is what the usage would cost at list prices, not what we paid. The version tested here is a candidate, and the agent in the repository is still an older one.
+
+Everything below is technical detail for the engineering team. Here, c9 is our agent's current version, precision and recall are the scoring terms for "right" and "found", and F1 is the overall score.
+
+## Technical detail
+
 Each full run over ReviewBench's 219 PRs goes here, newest first. [How to run one](LOOP.md#running-a-full-benchmark).
 
 Every score on this page is judged by Claude Sonnet 5.5. The leaderboard judges with Sonnet 5, so these are not leaderboard scores, and comparing them with a leaderboard row carries an offset nobody has measured. Full runs include `val` and `holdout`, so this page reports aggregates only.
