@@ -1,0 +1,1071 @@
+diff -ruN a/pr-review/config.json b/pr-review/config.json
+--- a/pr-review/config.json	2026-11-03 14:43:05
++++ b/pr-review/config.json	2026-11-04 02:48:33
+@@ -2,8 +2,8 @@
+   "default_profile": "balanced",
+   "rules_chars": 5000,
+   "partition": {
+-    "target_chars": 26000,
+-    "max_partitions": 24
++    "target_chars": 60000,
++    "max_partitions": 10
+   },
+   "hints": {
+     "enabled": true,
+@@ -11,33 +11,104 @@
+     "chars_per_prompt": 2500
+   },
+   "budget": {
+-    "max_discovery_tasks": 60,
+-    "max_steps": 8,
+-    "min_task_seconds": 75,
+-    "deadline_base": 300,
++    "max_discovery_tasks": 16,
++    "max_steps": 12,
++    "min_task_seconds": 30,
++    "deadline_base": 420,
+     "deadline_per_1k_lines": 30,
+-    "deadline_max": 900,
+-    "stage_share": {"discover": 0.6, "gap": 0.7, "dedupe": 0.78, "verify": 0.97}
++    "deadline_max": 480,
++    "stage_share": {
++      "discover": 0.65,
++      "gap": 0.65,
++      "dedupe": 0.72,
++      "verify": 0.975
++    }
+   },
+   "lenses": {
+-    "general":         {"title": "Everything: an exhaustive sweep",        "applies": ["source", "test", "config", "docs", "ui"], "priority": 1, "passes": 2},
+-    "correctness":     {"title": "Logic and state",                        "applies": ["source", "test", "ui"],                   "priority": 2, "passes": 1},
+-    "contracts":       {"title": "Contracts across files",                 "applies": ["source", "config", "ui"],                 "priority": 3, "passes": 1},
+-    "config":          {"title": "Build, CI, deployment and dependencies", "applies": ["config"],                                 "priority": 3, "passes": 1},
+-    "intent":          {"title": "Does it do what it claims, and what did it remove", "applies": ["source", "config", "docs", "ui"], "priority": 4, "passes": 1, "scope": "pr"},
+-    "reliability":     {"title": "Failure, concurrency and performance",   "applies": ["source", "config"],                       "priority": 5, "passes": 1},
+-    "security":        {"title": "Security with a concrete path",          "applies": ["source", "config", "ui"],                 "priority": 6, "passes": 1},
+-    "tests":           {"title": "Tests",                                  "applies": ["test", "source"],                         "priority": 7, "passes": 1},
+-    "docs":            {"title": "Documentation against the code",         "applies": ["docs", "source", "config"],               "priority": 8, "passes": 1},
+-    "maintainability": {"title": "Consistency and maintainability",        "applies": ["source", "test", "ui"],                   "priority": 9, "passes": 1},
+-    "ui":              {"title": "User interface and accessibility",       "applies": ["ui"],                                     "priority": 9, "passes": 1}
++    "general": {
++      "title": "Everything: an exhaustive sweep",
++      "applies": [
++        "source",
++        "test",
++        "config",
++        "docs",
++        "ui"
++      ],
++      "priority": 1,
++      "passes": 2
++    },
++    "failure": {
++      "title": "Failure, concurrency, performance and security",
++      "applies": [
++        "source",
++        "config",
++        "ui"
++      ],
++      "priority": 4,
++      "passes": 1
++    },
++    "drift": {
++      "title": "Tests, docs and consistency",
++      "applies": [
++        "source",
++        "test",
++        "docs",
++        "ui"
++      ],
++      "priority": 3,
++      "passes": 1
++    },
++    "intent": {
++      "title": "Does it do what it claims, and what did it remove",
++      "applies": [
++        "source",
++        "config",
++        "docs",
++        "ui"
++      ],
++      "priority": 2,
++      "passes": 1,
++      "scope": "pr"
++    },
++    "config": {
++      "title": "Build, CI, deployment and dependencies",
++      "applies": [
++        "config"
++      ],
++      "priority": 6,
++      "passes": 1,
++      "enabled": false
++    },
++    "ui": {
++      "title": "User interface and accessibility",
++      "applies": [
++        "ui"
++      ],
++      "priority": 7,
++      "passes": 1,
++      "enabled": false
++    },
++    "quick": {
++      "title": "A first quick sweep of everything",
++      "applies": [
++        "source",
++        "test",
++        "config",
++        "docs",
++        "ui"
++      ],
++      "priority": 0,
++      "passes": 1,
++      "effort": null,
++      "enabled": false
++    }
+   },
+   "gap": {
+-    "enabled": true,
++    "enabled": false,
+     "title": "Hunks nobody has commented on",
+     "margin": 3,
+     "min_changed_lines": 3,
+-    "max_tasks": 12
++    "max_tasks": 4
+   },
+   "merge": {
+     "near_lines": 3,
+@@ -51,12 +122,55 @@
+   },
+   "verify": {
+     "enabled": true,
+-    "batch_size": 3,
++    "batch_size": 6,
+     "max_candidates": 150
+   },
+   "profiles": {
+-    "exhaustive": {"drop_verdicts": ["refuted"], "min_confidence": 0.0, "min_severity": "low", "max_findings": 90, "expand_also_in": true},
+-    "balanced": {"drop_verdicts": ["refuted"], "min_confidence": 0.5, "min_severity": "low", "max_findings": 25, "expand_also_in": false},
+-    "strict": {"drop_verdicts": ["refuted", "uncertain", "unverified"], "min_confidence": 0.7, "min_severity": "medium", "max_findings": 10, "expand_also_in": false}
++    "exhaustive": {
++      "drop_verdicts": [
++        "refuted",
++        "not_worth_raising"
++      ],
++      "min_confidence": 0.0,
++      "min_severity": "low",
++      "max_findings": 90,
++      "expand_also_in": true
++    },
++    "balanced": {
++      "drop_verdicts": [
++        "refuted",
++        "not_worth_raising"
++      ],
++      "min_confidence": 0.5,
++      "min_severity": "low",
++      "max_findings": 25,
++      "expand_also_in": false
++    },
++    "strict": {
++      "drop_verdicts": [
++        "refuted",
++        "not_worth_raising",
++        "uncertain",
++        "unverified"
++      ],
++      "min_confidence": 0.7,
++      "min_severity": "medium",
++      "max_findings": 10,
++      "expand_also_in": false
++    }
++  },
++  "effort": {
++    "discover": "high",
++    "gap": "high",
++    "dedupe": null,
++    "verify": null
++  },
++  "context": {
++    "enabled": true,
++    "chars_per_task": 30000,
++    "file_chars": 14000,
++    "sibling_chars": 5000,
++    "sibling_min_additions": 30,
++    "window": 40
+   }
+ }
+diff -ruN a/pr-review/references/discovery.md b/pr-review/references/discovery.md
+--- a/pr-review/references/discovery.md	2026-11-03 14:43:05
++++ b/pr-review/references/discovery.md	2026-11-04 02:16:15
+@@ -14,10 +14,17 @@
+ ## The diff to review: {{part_label}}
+ 
+ Numbers on the left are line numbers of the file at head. Lines marked `-` were removed and have no number.
+-The old version of any changed file is at `{{work}}/base/<path>`.
++The old version of any changed file is at `{{work}}/base/<path>`, relative to your working directory. Everything you can read is under
++your working directory, so use relative paths and do not look above it.
+ 
+ {{diff}}
+ 
++## The code around this change
++
++Read this before judging any hunk. Line numbers are those of the file at head.
++
++{{context}}
++
+ ## Leads from automated checks
+ 
+ Unverified. Check a lead before relying on it, and report it only if the code bears it out.
+@@ -26,13 +33,27 @@
+ 
+ ## How to work
+ 
+-1. Go through every file and hunk above in turn. Give the last one the same attention as the first.
+-2. For each hunk, work out what the code did before, what it does now, and what depends on it.
+-3. Read code instead of guessing. Open the surrounding file, the callers, the callee, the type or config it
+-   relies on. Most serious problems only show up when a changed line is read against code that did not change.
+-   Search for a name before claiming it is unused or undefined, and read the function before claiming what it
+-   returns.
+-4. Before you finish, go back over the hunks you found nothing in and ask what you did not check.
++Do these in order. Each one finds problems the others miss, and most serious problems only show up when a changed line is read
++against code that did not change.
++
++1. Read each changed file whole, then say to yourself what each hunk was for.
++2. Compare. Go through the closest sibling line by line against the new code, and the old version against the new. What does the
++   sibling do that this does not: a cleanup, a delete rule, a validation, a filter, an error path, a registration, a test? What did
++   the old code guarantee that is now gone? Use the repository's own helper or pattern as the standard.
++3. Follow every changed name. For each function, option, setting, environment variable, field or route added or changed, search for
++   all its readers and writers. Is one guarded where another is not? Does every caller still fit? Is the new thing reachable at all?
++4. Test the claims. For each promise in the title, description, docstrings and README, find the code that delivers it, then try it
++   with the value absent, empty, malformed and repeated.
++5. Follow failure. From each throw, rejected promise, error return or default value, trace what the caller or user finally sees. Does
++   a missing setting fail safe? Does a catch report success?
++6. Follow outside data. Did this change alter who can write a value that reaches HTML, SQL, a shell, a path or a URL?
++7. Walk through it with one concrete input: a loop, a generated string, a quoted shell line, a template, a regex. Does each call do
++   anything, or is it a save with no change, a value computed and never used, a request made twice?
++8. Repeat your findings. When you find a defect, look for the same pattern in the other changed files, and report each file as a
++   finding of its own.
++
++Search for a name before claiming it is unused or undefined, and read a function before claiming what it returns. If a claim rests on
++how a library behaves and its source is not in this checkout, say so in the finding.
+ 
+ You have at most {{max_steps}} rounds of tool use, and each round can make several calls at once, so request everything
+ you need together instead of one call at a time. Read parts of large files. You have no shell. Then write your findings: an
+diff -ruN a/pr-review/references/lenses/contracts.md b/pr-review/references/lenses/contracts.md
+--- a/pr-review/references/lenses/contracts.md	2026-11-03 12:31:31
++++ b/pr-review/references/lenses/contracts.md	1970-01-01 01:00:00
+@@ -1,24 +0,0 @@
+-Most serious defects are a changed line that no longer agrees with code that did not change. Compare the two sides of
+-each boundary this diff touches. Search for every consumer; do not assume.
+-
+-For each changed function, type, config key, route, event, schema or file format:
+-
+-- Find the callers and readers. Do they pass the new arguments and handle the new return shape, new error, new
+-  `None`, new async behavior?
+-- For each new call, read the callee. Does it actually accept these arguments, return this shape, and raise what the
+-  caller expects? Does it need a flag or option the caller did not pass?
+-
+-Names that have to agree on both sides, and often do not:
+-
+-- environment variables and config keys between code, deployment manifests, CI and docs
+-- CLI flags, route paths, queue and topic names, database columns, JSON fields between writer and reader, translation keys
+-- file paths and output locations between the step that writes and the step that reads
+-
+-Also check:
+-
+-- Wiring: is the new code reachable? Registered, exported, imported, added to the build, passed through every layer
+-  (a new setting set on the API service but not on the web service)?
+-- Renames and removals: stale references to the old name, in code, tests, docs and config.
+-- Public API breaks: a required member added to a public interface, a removed alias or parameter, a changed default, a
+-  renamed attribute argument, a return type widened, a behavior change existing callers cannot detect.
+-- Data already stored: can existing records and existing clients still be read by the new code?
+diff -ruN a/pr-review/references/lenses/correctness.md b/pr-review/references/lenses/correctness.md
+--- a/pr-review/references/lenses/correctness.md	2026-11-03 12:33:06
++++ b/pr-review/references/lenses/correctness.md	1970-01-01 01:00:00
+@@ -1,22 +0,0 @@
+-Find logic that does the wrong thing. Trace each changed branch with concrete values instead of reading it for
+-plausibility: an empty collection, zero, null or missing, a negative number, the first and last element, a
+-duplicate, a value at a boundary.
+-
+-Look for:
+-
+-- Wrong variable, inverted condition, `and` where `or` is meant, off-by-one, wrong comparison, wrong units.
+-- `break` where `continue` is meant, an early return that skips cleanup or later items, a branch that can never run.
+-- A missing `await`, a promise or future used as its value, an iterator consumed twice.
+-- API misuse: a property the type does not have (`.size` on an array), a method that returns a copy being treated
+-  as if it mutates, an argument order that compiles but means something else, a flag the callee requires to return
+-  the format the caller parses.
+-- State that goes inconsistent: a flag set and never cleared, an update that skips one of two stores, an event that
+-  leaves status out of step with data, work done before the validation that should have prevented it.
+-- Data quietly lost or changed: a mapping that drops fields, a default that overwrites a real value, rounding, time
+-  zones, encoding, integer overflow, sort order, a float compared for equality.
+-- A copied block where one branch was updated and its sibling was not.
+-- UI state: hooks called conditionally, stale closures, a control removed so that an action can no longer be
+-  performed at all, an empty list that hides the only way to add the first item.
+-
+-Check each claim against the code. The test for this pass: if you can name the input and the wrong output, it is a
+-finding.
+diff -ruN a/pr-review/references/lenses/docs.md b/pr-review/references/lenses/docs.md
+--- a/pr-review/references/lenses/docs.md	2026-11-03 12:31:31
++++ b/pr-review/references/lenses/docs.md	1970-01-01 01:00:00
+@@ -1,20 +0,0 @@
+-Compare what the text says with what the code does. Open the code; do not judge docs by how they read.
+-
+-For each changed README, doc page, docstring, comment, help text, changelog entry and example:
+-
+-- Check every concrete detail against the code: flag names, defaults, environment variables, paths, function names, return
+-  types, status codes, limits, supported values.
+-- Run the example in your head. Would it work as written? A missing `await`, a wrong import, an outdated argument.
+-- A table or list of features that claims more or less than is implemented.
+-- A comment that contradicts the line below it, or describes what the code used to do.
+-
+-Then the reverse: for each behavior this diff changes, search the repository's docs and comments for the old name or the
+-old behavior. Stale documentation elsewhere in the repository counts, when this change made it stale.
+-
+-Also report:
+-
+-- A typo in user-visible text, an identifier or a config key, where it could mislead or break something.
+-- A version number or changelog that disagrees with the rest of the change.
+-- Public API or a configuration option added with no documentation where the repository documents its siblings.
+-
+-Do not report that documentation could be longer in general, or that an already clear function lacks a docstring.
+diff -ruN a/pr-review/references/lenses/drift.md b/pr-review/references/lenses/drift.md
+--- a/pr-review/references/lenses/drift.md	1970-01-01 01:00:00
++++ b/pr-review/references/lenses/drift.md	2026-11-04 02:16:15
+@@ -0,0 +1,68 @@
++Judge whether the tests in this change would fail if the code broke, and whether the behavior this change adds is tested
++at all.
++
++In test code, report:
++
++- A test that exercises only its mocks and never calls the code under test. An assertion that can never fail, or only
++  checks that something is defined.
++- A wrong expected value, or a test whose name says one thing and whose body checks another.
++- A mock patched where it is defined instead of where it is used, so the real code still runs. A fixture whose shape has
++  drifted from what production uses.
++- Fragile tests: dependence on order, wall-clock time, sleeps, network, exact floating-point values, deep DOM structure,
++  shared state left behind by another test. `.only` or skip left in.
++- Missing test dependencies, so the suite cannot run on a clean install. Tests not picked up by the runner configuration.
++
++For the code in this diff, report specific missing tests, but only where this repository already tests code of this kind. First find
++an existing test for a sibling. If there is none, say nothing about missing tests: setting up a test suite is not part of this change.
++
++- Name the new branch, error path or edge case that nothing exercises, and what regression would go unnoticed. Read the
++  existing tests first, so that you do not claim something is untested when it is covered.
++- A bug fix with no test that fails without the fix.
++
++"This needs more tests" without naming the behavior is not a finding.
++
++Documentation:
++
++Compare what the text says with what the code does. Open the code; do not judge docs by how they read.
++
++For each changed README, doc page, docstring, comment, help text, changelog entry and example:
++
++- Check every concrete detail against the code: flag names, defaults, environment variables, paths, function names, return
++  types, status codes, limits, supported values.
++- Run the example in your head. Would it work as written? A missing `await`, a wrong import, an outdated argument.
++- A table or list of features that claims more or less than is implemented.
++- A comment that contradicts the line below it, or describes what the code used to do.
++
++Then the reverse: for each behavior this diff changes, search the repository's docs and comments for the old name or the
++old behavior. Stale documentation elsewhere in the repository counts, when this change made it stale.
++
++Also report:
++
++- A typo in user-visible text, an identifier or a config key, where it could mislead or break something.
++- A version number or changelog that disagrees with the rest of the change.
++- Public API or a configuration option added with no documentation where the repository documents its siblings.
++
++Do not report that documentation could be longer in general, or that an already clear function lacks a docstring.
++
++Consistency:
++
++Find what will cost the next person, with evidence from this repository. Every finding here should cite the existing code
++that makes it a problem.
++
++- Inconsistency with an established local convention: naming, casing, file layout, error handling, or a helper everyone
++  else uses. Name the sibling file or function that shows the convention.
++- Duplicated domain logic that can drift apart: a mapping, a validation rule, a list of cases, hard-coded in a second place
++  when one already exists. Name both places, and say what goes wrong when one changes.
++- A hard-coded value where the repository already has a constant, a setting or a variable for it.
++- Dead code added by this change: a parameter never read, an import never used, a branch that cannot be reached, a function
++  nothing calls, commented-out code.
++- A misleading name: a function that does more than its name says, a variable whose name says the opposite of its value, a
++  public identifier with a typo.
++- Something present on all sibling artifacts and missing from the new one: a file the other modules all have, a registration
++  step, a required field.
++- A workaround where the framework offers a direct way, when you can name it and it preserves behavior.
++- Code in the wrong layer, or an abstraction with one caller that makes the change harder to follow, when you can say what
++  the simpler form would be.
++
++Do not report taste. "I would name this differently" with no convention behind it, formatting, and small refactors that change
++nothing for anyone are not findings.
+diff -ruN a/pr-review/references/lenses/failure.md b/pr-review/references/lenses/failure.md
+--- a/pr-review/references/lenses/failure.md	1970-01-01 01:00:00
++++ b/pr-review/references/lenses/failure.md	2026-11-04 02:16:15
+@@ -0,0 +1,49 @@
++Ask what happens when things go wrong, or happen at the same time, or happen a lot.
++
++Failure:
++
++- An exception swallowed or logged and then reported as success. A partial failure that leaves half the work applied.
++- An error turned into a default value, so that a wrong answer looks like a right one.
++- A missing timeout on a call that can hang, or a timeout too short for the job. A retry that is not idempotent and
++  repeats a side effect.
++- A fallback or default that silently selects the wrong environment, endpoint or mode when a setting is absent.
++- Something that fails in a clean checkout or on first run: a directory that may not exist, a generated file that is
++  ignored by git, a step depending on the order things happen to run in.
++
++Concurrency and lifecycle:
++
++- Shared state read or written without the protection used elsewhere. A check-then-act race. Work started on one thread
++  touching data owned by another.
++- Cancellation or shutdown that loses work or never finishes. Listeners, timers, subscriptions, handles and connections
++  that are never released, especially on the error path.
++- A cleanup that does not run on the path it is needed for.
++
++Performance, when you can name the cost:
++
++- Quadratic work over a collection that can realistically be large, a query in a loop, an expensive call repeated per
++  item or per request, a whole file read to get one value.
++- Unbounded growth of a queue, cache or list. Expensive validation run before a cheap check that could reject first.
++
++State the realistic size or frequency. "This might be slow" with no specifics is not a finding.
++
++Security:
++
++Report a security problem only when you can show the path: where the untrusted value enters, how it travels, and the
++line where it does harm, or the check that is missing and what an attacker gets by its absence. Follow the data through
++the code and name the identifiers.
++
++Look for:
++
++- Injection: user input reaching SQL, a shell, a template, `innerHTML`, a file path, a URL fetched by the server, a
++  deserializer, a regular expression.
++- Missing authorization: a new endpoint without the check its siblings have, an object looked up by ID without an ownership
++  check, an action available to the wrong role, an existence check that leaks what the read path hides.
++- Authentication flows: tokens not validated, sessions not invalidated, a credential endpoint without the rate limit its
++  siblings have, a development login reachable in production.
++- Secrets and data: a real credential or private identifier committed, secrets or personal data written to logs, sensitive
++  files included in a build or published package.
++- CI: untrusted pull request content reaching a privileged workflow, with the specific trigger and the step it reaches.
++
++Do not report the generic form of any of these. "Pin this action to a SHA", "sanitize this input", and "this could allow
++injection" with no path from an attacker's input are not findings. Automated tools produce these in bulk and nearly all are
++noise.
+diff -ruN a/pr-review/references/lenses/general.md b/pr-review/references/lenses/general.md
+--- a/pr-review/references/lenses/general.md	2026-11-03 12:31:31
++++ b/pr-review/references/lenses/general.md	2026-11-04 02:16:15
+@@ -10,4 +10,7 @@
+ - Is anything now inconsistent: a sibling function, a config value, a test, the docs, a comment?
+ - Can a user actually reach and use what was added?
+ 
++Trace each changed branch with concrete values: empty, zero, null, the first and last element, a duplicate, a boundary. For each changed
++function, type, setting or route, search for every caller and reader, and read each new callee instead of assuming what it accepts or returns.
++
+ Report everything you find, from crashes to misleading comments.
+diff -ruN a/pr-review/references/lenses/maintainability.md b/pr-review/references/lenses/maintainability.md
+--- a/pr-review/references/lenses/maintainability.md	2026-11-03 12:31:31
++++ b/pr-review/references/lenses/maintainability.md	1970-01-01 01:00:00
+@@ -1,20 +0,0 @@
+-Find what will cost the next person, with evidence from this repository. Every finding here should cite the existing code
+-that makes it a problem.
+-
+-- Inconsistency with an established local convention: naming, casing, file layout, error handling, or a helper everyone
+-  else uses. Name the sibling file or function that shows the convention.
+-- Duplicated domain logic that can drift apart: a mapping, a validation rule, a list of cases, hard-coded in a second place
+-  when one already exists. Name both places, and say what goes wrong when one changes.
+-- A hard-coded value where the repository already has a constant, a setting or a variable for it.
+-- Dead code added by this change: a parameter never read, an import never used, a branch that cannot be reached, a function
+-  nothing calls, commented-out code.
+-- A misleading name: a function that does more than its name says, a variable whose name says the opposite of its value, a
+-  public identifier with a typo.
+-- Something present on all sibling artifacts and missing from the new one: a file the other modules all have, a registration
+-  step, a required field.
+-- A workaround where the framework offers a direct way, when you can name it and it preserves behavior.
+-- Code in the wrong layer, or an abstraction with one caller that makes the change harder to follow, when you can say what
+-  the simpler form would be.
+-
+-Do not report taste. "I would name this differently" with no convention behind it, formatting, and small refactors that change
+-nothing for anyone are not findings.
+diff -ruN a/pr-review/references/lenses/quick.md b/pr-review/references/lenses/quick.md
+--- a/pr-review/references/lenses/quick.md	1970-01-01 01:00:00
++++ b/pr-review/references/lenses/quick.md	2026-11-04 02:16:15
+@@ -0,0 +1,13 @@
++No single focus in this pass. Read the change the way the person who will be paged for it would.
++
++Ask of each hunk, in this order:
++
++- Does it run? Syntax, imports, names, types, arguments, build wiring.
++- Does it do what the author says it does, on all paths and not just the obvious one?
++- What did the old code guarantee, and does anything still rely on that?
++- What input breaks it: empty, missing, zero, duplicate, very large, concurrent, repeated?
++- If it fails, what happens? Is the failure visible, or does something report success?
++- Is anything now inconsistent: a sibling function, a config value, a test, the docs, a comment?
++- Can a user actually reach and use what was added?
++
++Report everything you find, from crashes to misleading comments.
+diff -ruN a/pr-review/references/lenses/reliability.md b/pr-review/references/lenses/reliability.md
+--- a/pr-review/references/lenses/reliability.md	2026-11-03 12:31:31
++++ b/pr-review/references/lenses/reliability.md	1970-01-01 01:00:00
+@@ -1,27 +0,0 @@
+-Ask what happens when things go wrong, or happen at the same time, or happen a lot.
+-
+-Failure:
+-
+-- An exception swallowed or logged and then reported as success. A partial failure that leaves half the work applied.
+-- An error turned into a default value, so that a wrong answer looks like a right one.
+-- A missing timeout on a call that can hang, or a timeout too short for the job. A retry that is not idempotent and
+-  repeats a side effect.
+-- A fallback or default that silently selects the wrong environment, endpoint or mode when a setting is absent.
+-- Something that fails in a clean checkout or on first run: a directory that may not exist, a generated file that is
+-  ignored by git, a step depending on the order things happen to run in.
+-
+-Concurrency and lifecycle:
+-
+-- Shared state read or written without the protection used elsewhere. A check-then-act race. Work started on one thread
+-  touching data owned by another.
+-- Cancellation or shutdown that loses work or never finishes. Listeners, timers, subscriptions, handles and connections
+-  that are never released, especially on the error path.
+-- A cleanup that does not run on the path it is needed for.
+-
+-Performance, when you can name the cost:
+-
+-- Quadratic work over a collection that can realistically be large, a query in a loop, an expensive call repeated per
+-  item or per request, a whole file read to get one value.
+-- Unbounded growth of a queue, cache or list. Expensive validation run before a cheap check that could reject first.
+-
+-State the realistic size or frequency. "This might be slow" with no specifics is not a finding.
+diff -ruN a/pr-review/references/lenses/security.md b/pr-review/references/lenses/security.md
+--- a/pr-review/references/lenses/security.md	2026-11-03 12:31:31
++++ b/pr-review/references/lenses/security.md	1970-01-01 01:00:00
+@@ -1,19 +0,0 @@
+-Report a security problem only when you can show the path: where the untrusted value enters, how it travels, and the
+-line where it does harm, or the check that is missing and what an attacker gets by its absence. Follow the data through
+-the code and name the identifiers.
+-
+-Look for:
+-
+-- Injection: user input reaching SQL, a shell, a template, `innerHTML`, a file path, a URL fetched by the server, a
+-  deserializer, a regular expression.
+-- Missing authorization: a new endpoint without the check its siblings have, an object looked up by ID without an ownership
+-  check, an action available to the wrong role, an existence check that leaks what the read path hides.
+-- Authentication flows: tokens not validated, sessions not invalidated, a credential endpoint without the rate limit its
+-  siblings have, a development login reachable in production.
+-- Secrets and data: a real credential or private identifier committed, secrets or personal data written to logs, sensitive
+-  files included in a build or published package.
+-- CI: untrusted pull request content reaching a privileged workflow, with the specific trigger and the step it reaches.
+-
+-Do not report the generic form of any of these. "Pin this action to a SHA", "sanitize this input", and "this could allow
+-injection" with no path from an attacker's input are not findings. Automated tools produce these in bulk and nearly all are
+-noise.
+diff -ruN a/pr-review/references/lenses/tests.md b/pr-review/references/lenses/tests.md
+--- a/pr-review/references/lenses/tests.md	2026-11-03 12:31:31
++++ b/pr-review/references/lenses/tests.md	1970-01-01 01:00:00
+@@ -1,21 +0,0 @@
+-Judge whether the tests in this change would fail if the code broke, and whether the behavior this change adds is tested
+-at all.
+-
+-In test code, report:
+-
+-- A test that exercises only its mocks and never calls the code under test. An assertion that can never fail, or only
+-  checks that something is defined.
+-- A wrong expected value, or a test whose name says one thing and whose body checks another.
+-- A mock patched where it is defined instead of where it is used, so the real code still runs. A fixture whose shape has
+-  drifted from what production uses.
+-- Fragile tests: dependence on order, wall-clock time, sleeps, network, exact floating-point values, deep DOM structure,
+-  shared state left behind by another test. `.only` or skip left in.
+-- Missing test dependencies, so the suite cannot run on a clean install. Tests not picked up by the runner configuration.
+-
+-For the code in this diff, report specific missing tests:
+-
+-- Name the new branch, error path or edge case that nothing exercises, and what regression would go unnoticed. Read the
+-  existing tests first, so that you do not claim something is untested when it is covered.
+-- A bug fix with no test that fails without the fix.
+-
+-"This needs more tests" without naming the behavior is not a finding.
+diff -ruN a/pr-review/references/output-findings.md b/pr-review/references/output-findings.md
+--- a/pr-review/references/output-findings.md	2026-11-03 12:48:28
++++ b/pr-review/references/output-findings.md	2026-11-04 02:16:15
+@@ -22,6 +22,8 @@
+ 
+ ## Output
+ 
+-End with a single JSON object and nothing after it. If you truly found nothing, `findings` is an empty list.
++Write each finding as soon as you have checked it, while you work, on a line of its own: the word `FINDING`, a space, then one JSON
++object. Your session can be stopped at any moment, and anything not yet written is lost. Do not save findings up for the end. When you
++have finished, write `DONE` on a line of its own, and nothing after it.
+ 
+-{"findings":[{"file":"path/from/repo/root.py","start_line":12,"end_line":15,"severity":"medium","category":"correctness","confidence":0.8,"message":"...","also_in":[{"file":"other/path.py","start_line":3,"end_line":3}]}]}
++FINDING {"file":"path/from/repo/root.py","start_line":12,"end_line":15,"severity":"medium","category":"correctness","confidence":0.8,"message":"...","also_in":[{"file":"other/path.py","start_line":3,"end_line":3}]}
+diff -ruN a/pr-review/references/verify.md b/pr-review/references/verify.md
+--- a/pr-review/references/verify.md	2026-11-03 14:43:05
++++ b/pr-review/references/verify.md	2026-11-04 02:16:15
+@@ -10,7 +10,8 @@
+ ## How to decide
+ 
+ Take the claims one at a time. Read the code shown, then open whatever else the claim depends on: the callers, the
+-callee, the type, the config. The old version of any changed file is at `{{work}}/base/<path>`.
++callee, the type, the config. The old version of any changed file is at `{{work}}/base/<path>`, relative to your working directory. Everything you can read is under
++your working directory, so use relative paths and do not look above it.
+ 
+ You have at most {{max_steps}} rounds of tool use, and each round can make several calls at once. You have no shell. Give a
+ verdict for every claim before you run out, using `uncertain` for any you could not settle.
+@@ -26,15 +27,46 @@
+ Then give one verdict:
+ 
+ - `refuted`: you can point to specific code that shows the claim is false. You must quote that code exactly, in
+-  `evidence_quote`, and name its file in `evidence_file`. A claim that is only about a hypothetical future change,
+-  or only a matter of taste with no local convention behind it, is also `refuted`; quote the code it refers to.
+-- `confirmed`: you checked, and the code behaves as the claim says.
++  `evidence_quote`, and name its file in `evidence_file`.
++- `not_worth_raising`: the claim names no real problem in the code at head, and a senior reviewer would not ask the author to act on it.
++  Use it only for one of these, and name which one in `reasoning`:
++  - **no test suite**: it asks for tests, and this repository has no tests for this kind of code. Search before saying so.
++  - **no defect**: it asks the author to explain, check or track something, and shows nothing wrong.
++  - **guess**: it rests on what a name might mean, on how a tool behaves when nothing in this checkout shows it, or on a cost it gives
++    no evidence for.
++  - **unreachable**: the only way to reach the problem is through code that nothing calls.
++  - **accepted**: a comment, the description or a design document names this exact risk and accepts it, such as a documented way to
++    bypass a check, or a new migration that repeats an old one because migrations run only once.
++  - **generic warning**: a general warning that does not fit here, such as unsafe loading of files the same tool wrote.
++  - **housekeeping**: it concerns version numbers, release notes, where a file lives or removing commented-out code, and breaks no rule
++    you can name.
++  - **unworkable fix**: the suggested fix would not work or would make the code worse.
++  - **vendored**: it criticizes code copied unchanged from another project.
++- `confirmed`: you checked, and the code behaves as the claim says, and the author would want to know.
+ - `uncertain`: you could not settle it either way.
+ 
+-Refute on evidence only. Do not refute a claim because the impact looks small, because the code is old, because
+-the issue is outside the changed lines, or because you could not find the problem yourself in a quick look. If you
++These are not reasons to dismiss a claim. If the claim is true, it is `confirmed`:
++
++- **The same flaw exists elsewhere.** A pattern copied from another file is the same defect twice, not a decision.
++- **The description or a plan says the code does this.** That shows what the author meant, not that they saw the consequence. Only a
++  statement that names this exact risk counts.
++- **The copies agree today.** Duplicated logic, dead code, a condition that is always true, a misleading name and the same value
++  worked out in two places are problems in the code now, not in some future edit.
++- **It takes rare input, a particular order of events or a misconfiguration.** Say how likely it is in the message. A missing setting
++  that turns off authentication is a defect even if every deployment sets it today.
++
++A claim that data could be exposed, or that authentication or authorization could be skipped, is either `refuted` or `confirmed`, never
++`not_worth_raising`.
++
++A real defect stays, however small. A typo in user-visible text, a stale comment, an inconsistency with a named local convention and a
++missing check with a concrete failing input are all worth raising. Do not refute a claim because the impact looks small, because the code
++is old, because the issue is outside the changed lines, or because you could not find the problem yourself in a quick look. If you
+ are not sure, the verdict is `uncertain`, and the comment stays.
+ 
++Check any claim about how a language, framework or library behaves. If its source is not in this checkout, ask whether you actually
++know this behavior, and do not confirm a claim only because it sounds plausible. Check any claim about what the description says against
++the description above.
++
+ For a `confirmed` claim, if the comment is vague or gets a detail wrong while the underlying issue is real, put a
+ corrected version in `message`: one plain paragraph saying what is wrong and where, when it happens, what breaks,
+ and the smallest fix. Correct `start_line` and `end_line` if they point at the wrong place.
+@@ -43,4 +75,4 @@
+ 
+ End with a single JSON object and nothing after it, with one entry per claim:
+ 
+-{"verdicts":[{"id":"c001","reasoning":"...","verdict":"refuted","evidence_file":"src/a.py","evidence_quote":"if value is None: return"},{"id":"c002","reasoning":"...","verdict":"confirmed","message":"...","start_line":10,"end_line":12},{"id":"c003","reasoning":"...","verdict":"uncertain"}]}
++{"verdicts":[{"id":"c001","reasoning":"...","verdict":"refuted","evidence_file":"src/a.py","evidence_quote":"if value is None: return"},{"id":"c002","reasoning":"...","verdict":"confirmed","message":"...","start_line":10,"end_line":12},{"id":"c003","reasoning":"no test suite: the repository has no test files","verdict":"not_worth_raising"},{"id":"c004","reasoning":"...","verdict":"uncertain"}]}
+diff -ruN a/pr-review/scripts/hosts.py b/pr-review/scripts/hosts.py
+--- a/pr-review/scripts/hosts.py	2026-11-04 07:31:03
++++ b/pr-review/scripts/hosts.py	2026-11-04 02:16:27
+@@ -61,8 +61,11 @@
+     session: str | None = None
+     tool_calls: list[dict] = field(default_factory=list)
+     thinking: list[str] = field(default_factory=list)
++    # Every piece of text the model wrote, and whether the session was stopped before finishing.
++    all_text: str = ""
+     api_seconds: float = 0.0
+     throttled: list[str] = field(default_factory=list)
++    partial: bool = False
+ 
+     @property
+     def fatal(self) -> bool:
+@@ -233,12 +236,12 @@
+         return Usage(input=int(tokens.get("input") or 0), output=int(tokens.get("output") or 0), reasoning=int(tokens.get("reasoning") or 0),
+                      cache_read=int((tokens.get("cache") or {}).get("read") or 0), cost=float(data.get("cost") or 0), steps=fallback.steps)
+ 
+-    def ask(self, prompt: str, *, timeout: float = 600, attempts: int = 4, agent: str | None = None, model: str | None = None) -> Reply:
++    def ask(self, prompt: str, *, timeout: float = 600, attempts: int = 4, agent: str | None = None, model: str | None = None, effort: str | None = None) -> Reply:
+         """`timeout` is the budget for the whole call, retries included. A retry that restarted the
+         clock could overrun a review's deadline several times over."""
+         # An explicit title also stops OpenCode from calling a second model to generate one.
+         command = ["opencode", "run", "--server", f"http://127.0.0.1:{self.port}", "--agent", agent or self.agent,
+-                   "-m", model or self.model, "--format", "json", "--title", "pr-review task"]
++                   "-m", f"{model or self.model}#{effort}" if effort else (model or self.model), "--format", "json", "--title", "pr-review task"]
+         give_up = time.time() + timeout
+         reply = Reply(error="not attempted")
+         for attempt in range(attempts):
+@@ -338,7 +341,27 @@
+             proc.kill()
+             proc.wait()
+ 
+-    def ask(self, prompt: str, *, timeout: float = 600, attempts: int = 3, **_ignored) -> Reply:
++    def _stopped(self, exc: subprocess.TimeoutExpired, remaining: float, started: float) -> Reply:
++        """What a session had written when its time ran out."""
++        raw = exc.stdout or b""
++        reply = self.parse(raw.decode("utf-8", "replace") if isinstance(raw, bytes) else raw)
++        reply.text = reply.all_text or reply.text
++        reply.partial = True
++        reply.error = f"timeout after {int(remaining)}s"
++        reply.seconds = time.time() - started
++        return reply
++
++    def command_for(self, effort: str | None) -> list[str]:
++        """The command at this effort. Effort is passed per call, because one host serves stages that need different amounts of thought."""
++        command = self.command()
++        if not effort:
++            return command
++        if "--effort" in command:
++            at = command.index("--effort")
++            return command[:at] + command[at + 2:] + ["--effort", effort]
++        return command + ["--effort", effort]
++
++    def ask(self, prompt: str, *, timeout: float = 600, attempts: int = 3, effort: str | None = None, **_ignored) -> Reply:
+         """`timeout` is the budget for the whole call, retries included."""
+         give_up = time.time() + timeout
+         reply = Reply(error="not attempted")
+@@ -348,9 +371,11 @@
+                 return reply
+             started = time.time()
+             try:
+-                stdout, stderr, status = self._session(self.command(), prompt, max(1, remaining))
+-            except subprocess.TimeoutExpired:
+-                reply = Reply(error=f"timeout after {int(remaining)}s", seconds=time.time() - started)
++                stdout, stderr, status = self._session(self.command_for(effort), prompt, max(1, remaining))
++            except subprocess.TimeoutExpired as exc:
++                reply = self._stopped(exc, remaining, started)
++                # Time is what ran out, so a retry cannot do better. Keep what it wrote.
++                return reply
+             else:
+                 reply = self.parse(stdout)
+                 reply.seconds = time.time() - started
+@@ -422,6 +447,7 @@
+         by_id: dict[str, dict] = {}
+         last_text = ""
+         finished = False
++        running_output = 0
+         for event in events:
+             kind = event.get("type")
+             message = event.get("message")
+@@ -430,6 +456,10 @@
+                 pieces = [block.get("text", "") for block in content if block.get("type") == "text"]
+                 if pieces:
+                     last_text = "".join(pieces)
++                    reply.all_text += last_text + "\n"
++                usage = (event.get("message") or {}).get("usage") or {}
++                # Only used for a session that never reaches its result event, so its spend is not lost from the totals.
++                running_output += int(usage.get("output_tokens") or 0)
+                 for block in content:
+                     if block.get("type") == "thinking" and block.get("thinking"):
+                         reply.thinking.append(block["thinking"])
+@@ -465,6 +495,7 @@
+                 reply.usage.cost = float(event.get("total_cost_usd") or 0)
+                 reply.usage.steps = int(event.get("num_turns") or 0)
+         if not finished:
++            reply.usage.output = running_output
+             reply.error = f"unparseable output: {stdout[:200]}"
+         return reply
+ 
+@@ -480,6 +511,12 @@
+         super().__init__(cwd, model, max_steps)
+         self.effort = effort
+ 
++    def command_for(self, effort: str | None) -> list[str]:
++        command = self.command()
++        if not effort:
++            return command
++        return command[:-1] + ["-c", f'model_reasoning_effort="{effort}"', "-"]
++
+     def sandbox_flags(self) -> list[str]:
+         """Plain `--sandbox read-only` lets commands read the whole disk, answer keys included. This profile reads the working
+         directory and what commands need to run. It also allows the system's temporary directories, so keep nothing sensitive there."""
+@@ -512,6 +549,7 @@
+                 item = event.get("item") or {}
+                 if item.get("type") == "agent_message":
+                     reply.text = (item.get("text") or "").strip()
++                    reply.all_text += reply.text + "\n"
+                 elif item.get("type") == "reasoning" and (item.get("text") or item.get("summary")):
+                     reply.thinking.append(str(item.get("text") or item.get("summary")))
+                 elif item.get("type") in ("command_execution", "web_search", "mcp_tool_call"):
+diff -ruN a/pr-review/scripts/review.py b/pr-review/scripts/review.py
+--- a/pr-review/scripts/review.py	2026-11-03 19:20:54
++++ b/pr-review/scripts/review.py	2026-11-04 02:16:15
+@@ -16,6 +16,7 @@
+ 
+ import argparse
+ import concurrent.futures as cf
++import difflib
+ import hashlib
+ import json
+ import os
+@@ -119,10 +120,27 @@
+     return objects
+ 
+ 
++def finding_lines(text: str) -> list[dict]:
++    """Findings written one per line as the model works, so a session stopped early still counts for what it found."""
++    out: list[dict] = []
++    for match in re.finditer(r"^\s*FINDING\s+(\{.*\})\s*$", text, re.M):
++        try:
++            item = json.loads(match.group(1))
++        except json.JSONDecodeError:
++            continue
++        if isinstance(item, dict):
++            out.append(item)
++    return out
++
++
+ def extract_list(text: str, key: str) -> list[dict] | None:
+     """The list under `key` from model output, or None if the output has no such JSON."""
+     if not text:
+         return None
++    if key == "findings":
++        lines = finding_lines(text)
++        if lines or re.search(r"^\s*DONE\s*$", text, re.M):
++            return lines
+     candidates = re.findall(r"```(?:json)?\s*\n?(.*?)```", text, re.S) + [text]
+     for candidate in candidates:
+         try:
+@@ -217,6 +235,84 @@
+     return out or "(none)"
+ 
+ 
++def _show(repo: Path, rev: str, path: str) -> str | None:
++    done = subprocess.run(["git", "-C", str(repo), "show", f"{rev}:{path}"], capture_output=True)
++    return done.stdout.decode("utf-8", "replace") if done.returncode == 0 and b"\0" not in done.stdout[:8000] else None
++
++
++def _numbered(lines: list[str], start: int, end: int) -> str:
++    return "\n".join(f"{n:>6}  {lines[n - 1][:240]}" for n in range(start, min(end, len(lines)) + 1))
++
++
++def _file_view(text: str, hunks: list, limit: int, window: int) -> tuple[str, str]:
++    """The whole file if it fits. Otherwise the regions around its changes, which is what a reader would scroll to."""
++    lines = text.split("\n")
++    whole = _numbered(lines, 1, len(lines))
++    if len(whole) <= limit:
++        return "whole file at head", whole
++    spans: list[list[int]] = []
++    for hunk in sorted(hunks, key=lambda h: h.new_start):
++        low, high = max(1, hunk.new_start - window), hunk.new_start + hunk.new_len + window
++        if spans and low <= spans[-1][1] + 1:
++            spans[-1][1] = max(spans[-1][1], high)
++        else:
++            spans.append([low, high])
++    body = "\n      ...\n".join(_numbered(lines, low, high) for low, high in spans)
++    return "around the changes, file continues beyond this", body[:limit]
++
++
++def closest_sibling(path: str, tree: list[str], changed: set[str]) -> str | None:
++    """The existing file most like this one, by location and name. Comparing with it is how a careful reviewer finds what the new
++    code forgot: the delete rule, the validation, the registration that every other file of this kind has."""
++    target = Path(path)
++    tokens = set(re.findall(r"[a-z0-9]+", target.stem.lower()))
++    best, best_score = None, 0.0
++    for other in tree:
++        candidate = Path(other)
++        if other in changed or candidate.suffix != target.suffix or other == path:
++            continue
++        same_dir = candidate.parent == target.parent
++        if not (same_dir or candidate.parent.parent == target.parent.parent or candidate.parent.name == target.parent.name):
++            continue
++        words = set(re.findall(r"[a-z0-9]+", candidate.stem.lower()))
++        overlap = len(tokens & words) / len(tokens | words) if tokens | words else 0.0
++        score = (2.0 if same_dir else 1.0) + 2.0 * overlap + difflib.SequenceMatcher(None, target.stem.lower(), candidate.stem.lower()).ratio()
++        if score > best_score:
++            best, best_score = other, score
++    return best
++
++
++def context_block(repo: Path, head: str, merge_base: str, items: list, tree: list[str], changed: set[str], config: dict) -> str:
++    """What a strong reviewer opens first, handed over up front. A weaker model tends not to go looking, and each trip to
++    fetch it would use up one of its few rounds. Shared fairly across the files of the task, so a long file cannot crowd out the rest."""
++    if not config.get("enabled", True) or not items:
++        return "(none)"
++    by_file: dict[str, list] = {}
++    files: dict[str, FileDiff] = {}
++    for item in items:
++        by_file.setdefault(item.file.path, []).extend(item.hunks)
++        files[item.file.path] = item.file
++    share = config["chars_per_task"] // max(1, len(files))
++    blocks: list[str] = []
++    for path, hunks in by_file.items():
++        file = files[path]
++        room = min(share, config["file_chars"])
++        # A new file is already shown whole by its diff.
++        if file.status != "added" and file.status != "deleted":
++            text = _show(repo, head, path)
++            if text:
++                label, body = _file_view(text, hunks, room, config["window"])
++                blocks.append(f"### {path}: {label}\n```\n{body}\n```")
++        if file.status == "added" or file.additions >= config["sibling_min_additions"]:
++            sibling = closest_sibling(path, tree, changed)
++            text = _show(repo, merge_base, sibling) if sibling else None
++            if text:
++                excerpt = text[: min(share, config["sibling_chars"])]
++                cut = "" if len(excerpt) == len(text) else ", start of file"
++                blocks.append(f"### Closest existing sibling of {path}: {sibling}{cut}\n```\n{excerpt}\n```")
++    return "\n\n".join(blocks) or "(none)"
++
++
+ def _write_task(work: Path, plan: list[dict], task: dict, prompt: str) -> None:
+     (work / "tasks").mkdir(parents=True, exist_ok=True)
+     (work / "tasks" / f"{task['id']}.md").write_text(prompt)
+@@ -285,6 +381,9 @@
+         (work / "parts" / f"part-{part.index:02d}.md").write_text(part.rendered())
+ 
+     template = reference("discovery.md", skill_dir)
++    context_config = config.get("context") or {"enabled": False}
++    tree = git(repo, "ls-tree", "-r", "--name-only", merge_base, check=False).splitlines()
++    changed_paths = {f.path for f in files} | {f.old_path for f in files}
+     plan: list[dict] = []
+     drafts: list[tuple[int, int, int, str]] = []
+     for lens_id, lens in config["lenses"].items():
+@@ -305,6 +404,7 @@
+     limit = config["budget"]["max_discovery_tasks"]
+     skipped_tasks = max(0, len(drafts) - limit)
+     by_index = {p.index: p for p in partitions}
++    contexts: dict[int, str] = {}
+     for number, priority, index, lens_id in drafts[:limit]:
+         if index == 0:
+             part_label = "the whole pull request"
+@@ -312,15 +412,21 @@
+                           + "\n".join(f"- {work_rel}/parts/part-{p.index:02d}.md ({', '.join(p.files()[:6])}{', ...' if len(p.files()) > 6 else ''})" for p in partitions)
+                           + "\nRead the parts that matter for this pass. Line numbers there work the same way as described above.")
+             part_files = [f for p in partitions for f in p.files()]
++            code_context = "(none)"
+         else:
+             part = by_index[index]
+             part_label = f"part {index} of {len(partitions)}"
+             seed = 0 if number == 1 else number * 1000 + index
+             diff_block = f"<diff>\n{part.rendered(seed)}\n</diff>"
+             part_files = part.files()
++            if index not in contexts:
++                contexts[index] = context_block(repo, head, merge_base, part.items, tree, changed_paths, context_config)
++            code_context = contexts[index]
+         task = {"id": f"d_{lens_id}_{index:02d}_{number}", "stage": "discover", "lens": lens_id, "part": index, "pass": number}
++        if "effort" in config["lenses"][lens_id]:
++            task["effort"] = config["lenses"][lens_id]["effort"]
+         prompt = fill(template, pr_context=pr_context, rules=rules_block, lens_title=config["lenses"][lens_id]["title"],
+-                      lens_body=reference(f"lenses/{lens_id}.md", skill_dir), part_label=part_label, diff=diff_block,
++                      lens_body=reference(f"lenses/{lens_id}.md", skill_dir), part_label=part_label, diff=diff_block, context=code_context,
+                       hints=_hints_for(part_files, hints, used_in, hint_cfg["chars_per_prompt"]), work=work_rel,
+                       max_steps=config["budget"]["max_steps"], output=reference("output-findings.md", skill_dir))
+         _write_task(work, plan, task, prompt)
+@@ -522,7 +628,7 @@
+         task = {"id": f"g_gap_{part.index:02d}_1", "stage": "gap", "lens": "gap", "part": part.index, "pass": 1}
+         prompt = fill(template, pr_context=meta["pr_context"], rules="", lens_title=config["gap"]["title"],
+                       lens_body=reference("lenses/gap.md", skill_dir), part_label=f"gap section {part.index} of {len(partitions)}",
+-                      diff=f"<diff>\n{part.rendered()}\n</diff>", hints="(none)", work=meta["work_rel"],
++                      diff=f"<diff>\n{part.rendered()}\n</diff>", context="(none)", hints="(none)", work=meta["work_rel"],
+                       max_steps=config["budget"]["max_steps"], output=reference("output-findings.md", skill_dir))
+         _write_task(work, plan, task, prompt)
+     return len(partitions)
+@@ -714,7 +820,10 @@
+             if value == "refuted" and not _quote_found(repo, work, verdict.get("evidence_file"), verdict.get("evidence_quote")):
+                 value = "uncertain"
+                 result["verdict_note"] = "refutation discarded: its evidence quote was not found in the code"
+-            result["verdict"] = value if value in ("confirmed", "refuted", "uncertain") else "uncertain"
++            if value == "not_worth_raising" and len(str(verdict.get("reasoning") or "").strip()) < 15:
++                value = "uncertain"
++                result["verdict_note"] = "dismissal discarded: it gave no reason"
++            result["verdict"] = value if value in ("confirmed", "refuted", "not_worth_raising", "uncertain") else "uncertain"
+             result["verdict_reasoning"] = str(verdict.get("reasoning") or "")[:600]
+             rewritten = re.sub(r"\s+", " ", str(verdict.get("message") or "")).strip()
+             if value == "confirmed" and len(rewritten) >= 40:
+@@ -813,17 +922,20 @@
+ 
+ 
+ def run_tasks(work: Path, tasks: list[dict], host, *, concurrency: int, until: float, task_timeout: float,
+-              key: str, cache_dir: Path | None, salt: str, totals: Usage, model: str, min_seconds: float = 15) -> dict:
++              key: str, cache_dir: Path | None, salt: str, totals: Usage, model: str, min_seconds: float = 15, effort: str | None = None) -> dict:
+     """Run tasks in parallel up to a deadline. A failed task only loses its own coverage;
+     only a failure of the host itself (auth, quota, blocked model) stops the batch. A task is not started
+     without time to finish: killing one loses its answer and every token it already spent."""
+     counts = {"ok": 0, "cached": 0, "failed": 0, "skipped": 0}
+     fatal: list[str] = []
++    base_model = model.split("#")[0]
+ 
+     def one(task: dict) -> None:
+         result_path = work / "results" / f"{task['id']}.json"
+         prompt = (work / "tasks" / f"{task['id']}.md").read_text()
+-        cache = _cache_path(cache_dir, prompt, model, salt) if cache_dir else None
++        task_effort = task["effort"] if "effort" in task else effort
++        cache_name = f"{base_model}#{task_effort}" if task_effort else base_model
++        cache = _cache_path(cache_dir, prompt, cache_name, salt) if cache_dir else None
+         if cache and cache.exists():
+             write_json(result_path, read_json(cache))
+             counts["cached"] += 1
+@@ -839,21 +951,28 @@
+                 return
+             unparseable = attempt > 0 and not reply.error
+             ask = prompt + "\n\nYour previous answer had no parseable JSON. Reply with only the JSON object described above." if unparseable else prompt
+-            reply = host.ask(ask, timeout=min(task_timeout, remaining))
++            reply = host.ask(ask, timeout=min(task_timeout, remaining), effort=task_effort)
+             totals.add(reply.usage)
+             if reply.fatal:
+                 fatal.append(reply.error or "host failure")
+                 break
+             if not reply.error and extract_list(reply.text, key) is not None:
+                 break
+-        record = {"text": reply.text, "error": reply.error, "task": task["id"], "seconds": round(reply.seconds, 1), "api_seconds": round(reply.api_seconds, 1), "throttled": reply.throttled[:3], "tools": reply.tools,
++            # Stopped by the clock, so there is no time left to ask again. What it wrote stands.
++            if reply.partial:
++                break
++        found = extract_list(reply.text, key)
++        kept_partial = reply.partial and bool(found)
++        record = {"text": reply.text, "error": None if kept_partial else reply.error, "partial": reply.partial, "task": task["id"], "seconds": round(reply.seconds, 1), "api_seconds": round(reply.api_seconds, 1), "throttled": reply.throttled[:3], "tools": reply.tools,
+                   "tool_calls": reply.tool_calls, "usage": vars(reply.usage)}
+-        ok = not reply.error and extract_list(reply.text, key) is not None
++        ok = kept_partial or (not reply.error and found is not None)
+         if not ok and not reply.error:
+             record["error"] = "no parseable output"
+         write_json(result_path, record)
+         counts["ok" if ok else "failed"] += 1
+-        if ok and cache:
++        counts["partial"] = counts.get("partial", 0) + int(kept_partial)
++        # A stopped session's answer depends on the clock, so it must not stand in for a complete one on a later run.
++        if ok and cache and not reply.partial:
+             write_json(cache, record)
+ 
+     with cf.ThreadPoolExecutor(max(1, concurrency)) as pool:
+@@ -874,8 +993,8 @@
+     shares = config["budget"]["stage_share"]
+     totals = Usage()
+     summary: dict[str, dict] = {}
+-    context = host or make_host(host_name, repo, model, max_steps=config["budget"]["max_steps"], effort=effort)
+-    cache_model = f"{model or host_name}#{effort}" if effort else (model or host_name)
++    context = host or make_host(host_name, repo, model, max_steps=config["budget"]["max_steps"])
++    stage_effort = config.get("effort") or {}
+     failure: str | None = None
+     with context as active:
+         while True:
+@@ -888,8 +1007,11 @@
+             try:
+                 # Merging is quick, so only the stages that explore need the full margin.
+                 floor = 25 if stage == "dedupe" else config["budget"].get("min_task_seconds", 15)
++                # An effort given on the command line overrides the configured one for every stage.
++                used = effort or stage_effort.get(stage)
++                cache_model = f"{model or host_name}#{used}" if used else (model or host_name)
+                 counts = run_tasks(work, pending, active, concurrency=concurrency, until=until, task_timeout=task_timeout,
+-                                   key=key, cache_dir=cache_dir, salt=salt, totals=totals, model=cache_model, min_seconds=floor)
++                                   key=key, cache_dir=cache_dir, salt=salt, totals=totals, model=cache_model, min_seconds=floor, effort=used)
+             except HostFailure as exc:
+                 failure = str(exc)
+                 log(f"  host failure: {failure}")
+@@ -905,7 +1027,7 @@
+         plan = read_json(work / "plan.json")
+         errors = [read_json(work / "results" / f"{t['id']}.json", {}).get("error") for t in plan if t["stage"] == "discover"]
+         failure = f"no discovery task succeeded: {next((e for e in errors if e), 'unknown error')}"
+-    stats = {**vars(totals), "seconds": round(time.time() - started, 1), "stages": summary, "model": model, "effort": effort, "host": host_name, "host_failure": failure}
++    stats = {**vars(totals), "seconds": round(time.time() - started, 1), "stages": summary, "model": model, "effort": effort or stage_effort, "host": host_name, "host_failure": failure}
+     write_json(work / "stats.json", stats)
+     return stats
+ 

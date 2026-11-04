@@ -1,6 +1,6 @@
 # Where this is going
 
-Written on 2026-11-03. Update it when the direction changes, and trust the code over this page on details.
+Written on 2026-11-03, and updated on 2026-11-04. Update it when the direction changes, and trust the code over this page on details.
 
 ## The goal
 
@@ -14,13 +14,12 @@ Everything is judged by **Claude Sonnet 5.5 or better**, never Sonnet 5 or DeepS
 
 | Piece | State |
 |---|---|
-| The skill | Built and tested. Being tuned for Haiku 5.5 |
+| The skill | Built and tested. `skill/pr-review` is still the older champion, since the gate rejected c9 on time. c9 has a full run and the champion doesn't |
 | Reviewers through Claude Code and Codex | Working, isolated, and audited. `bench/preflight.py --host claude` checks it |
 | Teachers | `bench/teacher.py` runs a strong model once over a PR, and `loop/compare.py` shows what it found that Haiku missed |
-| First numbers | Haiku 5.5 on `train_quick` (16 PRs), judged by Sonnet 5.5: macro precision 85.5, recall 50.4. These are training PRs, one reading, and a different judge from the leaderboard's |
-| The loop | Not yet moved. `loop/run_loop.py` still defaults to DeepSeek on OpenCode, its improver included, and no experiment has run, so `loop/ledger.jsonl` does not exist |
+| Numbers | [The first full run](RESULTS.md), on candidate c9 and judged by Sonnet 5.5: grounded P 82.7, R 57.1, F1 67.5, and estimated augmented P 86.0, R 82.5. It doesn't match OhMyBug yet. Provisional until 6 disturbed PRs are redone |
+| The loop | Reviews with Haiku 5.5 through Claude Code and judges with Sonnet 5.5. `evaluate` is in use, with 7 experiments in `loop/ledger.jsonl`, written by Opus 5.5 sessions. `iterate`'s automated improver still defaults to DeepSeek on OpenCode |
 | The maintainer corpus | Built: 221 PRs and 826 true findings from 35 projects, including 23 Linux patch series. Works end to end with Haiku 5.5, on two PRs. No baseline yet |
-| Commits | Nothing is committed. All of this is in the working tree |
 
 ## Two datasets, two jobs
 
@@ -33,6 +32,8 @@ It should not replace ReviewBench or decide alone. Its grounded precision sits n
 **It is also mostly not about bugs,** which changes how to use it. 86% of its true findings are low severity and 64% are maintainability or documentation. Only 8 are high. So the hypothesis behind building it, that the best engineers' reviews show how to find serious bugs, holds only for a small part of it, about 120 findings. Chasing its overall recall would teach the agent to nitpick, against the goal of being more precise.
 
 ## What comes next, in order
+
+**First, reach OhMyBug on the full set.** [RESULTS.md](RESULTS.md#what-comes-next) has the plan, and false alarms come first. The steps below were written before the first full run, and follow once that is done.
 
 1. **Measure before changing anything.** Run Haiku 5.5 on `maint_val_quick` with `bench/run.py --host claude`, and read recall on medium and high findings, not the headline. Until this exists, nobody knows if the corpus has anything to teach.
 2. **Ask whether the teachers are right.** Run Opus and Astra on `maint_train_quick`. If they do not catch more of what maintainers caught than Haiku does, then learning from them improves agreement with them and not review. This needs `loop/compare.py` to accept `maint_train`, since it only reads ReviewBench's `train` today.

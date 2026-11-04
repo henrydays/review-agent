@@ -79,6 +79,8 @@ python3 bench/run.py --select val --name my-run --host claude --model claude-hai
 This uses ReviewBench's own matcher and classifier prompts and its scoring rules, with Claude Sonnet 5.5 as the judge. **These numbers are for comparing versions of this agent. They
 are not leaderboard scores**, since the leaderboard judges with Claude Sonnet 5 on all 219 PRs, three times. [How the judge was chosen](docs/JUDGES.md).
 
+[Full runs so far, and how they compare with OhMyBug](docs/RESULTS.md). The best one so far, on an unaccepted candidate, doesn't match it yet: grounded P 82.7, R 57.1, and estimated augmented P 86.0, R 82.5, judged by Sonnet 5.5.
+
 To appear on the leaderboard, build `docker/Dockerfile`, push the image, and register it at [review-bench.ai/submit](https://review-bench.ai/submit).
 `docker/manifest.example.json` shows the shape of the registration.
 
